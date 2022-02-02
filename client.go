@@ -169,6 +169,10 @@ func (this *ShipClient) SendCloseMessage() (*ShipClientError) {
     return nil
 }
 
+func (this *ShipClient) IsOpen() bool {
+    return this.sock != nil
+}
+
 func (this *ShipClient) Close() (*ShipClientError) {
 
     if this.sock == nil {
