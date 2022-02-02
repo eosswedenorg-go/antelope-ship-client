@@ -157,7 +157,7 @@ func (this *ShipClient) Read() (*ShipClientError) {
 
 func (this *ShipClient) SendCloseMessage() (*ShipClientError) {
 
-    if this.sock == nil {
+    if this.IsOpen() == false {
         return &ShipClientError{ErrNotConnected, "Socket not connected"}
     }
 
@@ -175,7 +175,7 @@ func (this *ShipClient) IsOpen() bool {
 
 func (this *ShipClient) Close() (*ShipClientError) {
 
-    if this.sock == nil {
+    if this.IsOpen() == false {
         return &ShipClientError{ErrNotConnected, "Socket not connected"}
     }
 
