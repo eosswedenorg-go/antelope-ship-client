@@ -51,9 +51,12 @@ func NewClient(startBlock uint32, endBlock uint32, irreversibleOnly bool) (*Ship
     }
 }
 
-func (c *ShipClient) Connect(host string) (error) {
+func (c *ShipClient) Connect(host string) error {
 
-    url := url.URL{Scheme: "ws", Host: host,  Path: "/"}
+   return c.ConnectURL(url.URL{Scheme: "ws", Host: host, Path: "/"})
+}
+
+func (c *ShipClient) ConnectURL(url url.URL) error {
 
     sock, _, err := ws.DefaultDialer.Dial(url.String(), nil)
     if err != nil {
