@@ -68,9 +68,9 @@ func (this *ShipClient) SendBlocksRequest() (error) {
 
     // Encode the request.
     bytes, err := eos.MarshalBinary(ship.Request{
-		BaseVariant: eos.BaseVariant{
-			TypeID: ship.RequestVariant.TypeID("get_blocks_request_v0"),
-			Impl:   &ship.GetBlocksRequestV0{
+        BaseVariant: eos.BaseVariant{
+            TypeID: ship.RequestVariant.TypeID("get_blocks_request_v0"),
+            Impl:   &ship.GetBlocksRequestV0{
                 StartBlockNum: this.StartBlock,
                 EndBlockNum: this.EndBlock,
                 MaxMessagesInFlight: this.MaxMessagesInFlight,
@@ -79,12 +79,12 @@ func (this *ShipClient) SendBlocksRequest() (error) {
                 FetchTraces: this.TraceHandler != nil,
                 FetchDeltas: false,
             },
-		},
-	})
+        },
+    })
 
-	if err != nil {
+    if err != nil {
         return err
-	}
+    }
 
     // Send the request.
     return this.sock.WriteMessage(ws.BinaryMessage, bytes)
