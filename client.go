@@ -37,6 +37,7 @@ type ShipClient struct {
     CloseHandler func()
 }
 
+// Create a new client
 func NewClient(startBlock uint32, endBlock uint32, irreversibleOnly bool) (*ShipClient) {
     return &ShipClient{
         sock: nil,
@@ -51,11 +52,13 @@ func NewClient(startBlock uint32, endBlock uint32, irreversibleOnly bool) (*Ship
     }
 }
 
+// Connect the client to a ship node
 func (c *ShipClient) Connect(host string) error {
 
    return c.ConnectURL(url.URL{Scheme: "ws", Host: host, Path: "/"})
 }
 
+// Connect the client to a ship node
 func (c *ShipClient) ConnectURL(url url.URL) error {
 
     sock, _, err := ws.DefaultDialer.Dial(url.String(), nil)
@@ -67,6 +70,8 @@ func (c *ShipClient) ConnectURL(url url.URL) error {
     return nil
 }
 
+// Send a block request to the ship server.
+// This tells the server to start sending blocks to the client.
 func (c *ShipClient) SendBlocksRequest() (error) {
 
     // Encode the request.
@@ -93,6 +98,7 @@ func (c *ShipClient) SendBlocksRequest() (error) {
     return c.sock.WriteMessage(ws.BinaryMessage, bytes)
 }
 
+// Read messages from the client.
 func (c *ShipClient) Read() (*ShipClientError) {
 
     for {
@@ -158,6 +164,8 @@ func (c *ShipClient) Read() (*ShipClientError) {
     return nil
 }
 
+// Sends a close message to the server.
+// indicating that the client wants to terminate the connection.
 func (c *ShipClient) SendCloseMessage() (*ShipClientError) {
 
     if ! c.IsOpen() {
@@ -172,10 +180,15 @@ func (c *ShipClient) SendCloseMessage() (*ShipClientError) {
     return nil
 }
 
+// Returns true if the websocket connection is open. false otherwise.
 func (c *ShipClient) IsOpen() bool {
     return c.sock != nil
 }
 
+// Close the socket on the client side.
+//
+// NOTE: This method closes the underlying network connection without
+// sending or waiting for a close message.
 func (c *ShipClient) Close() (*ShipClientError) {
 
     if ! c.IsOpen() {
