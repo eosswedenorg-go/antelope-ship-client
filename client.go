@@ -153,10 +153,8 @@ func (c *ShipClient) Read() (*ShipClientError) {
         }
 
         status, ok := msg.Impl.(*ship.GetStatusResultV0)
-        if ok {
-            if c.StatusHandler != nil {
-                c.StatusHandler(status)
-            }
+        if ok && c.StatusHandler != nil {
+            c.StatusHandler(status)
         }
         break
     }
