@@ -31,6 +31,7 @@ type ShipClient struct {
     MaxMessagesInFlight uint32
 
     // Callback functions
+    InitHandler func(*eos.ABI)
     BlockHandler func(*ship.GetBlocksResultV0)
     TraceHandler func([]*ship.TransactionTraceV0)
     StatusHandler func(*ship.GetStatusResultV0)
