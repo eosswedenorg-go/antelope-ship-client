@@ -1,9 +1,9 @@
-
 package eos_ship_client
 
 import (
     "bytes"
     "net/url"
+
     ws "github.com/gorilla/websocket"
     eos "github.com/eoscanada/eos-go"
     "github.com/eoscanada/eos-go/ship"
