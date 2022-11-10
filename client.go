@@ -98,6 +98,26 @@ func (c *ShipClient) SendBlocksRequest() (error) {
     return c.sock.WriteMessage(ws.BinaryMessage, bytes)
 }
 
+// Send a status request to the ship server.
+// This tells the server to start sending status message to the client.
+func (c *ShipClient) SendStatusRequest() (error) {
+
+    // Encode the request.
+    bytes, err := eos.MarshalBinary(ship.Request{
+        BaseVariant: eos.BaseVariant{
+            TypeID: ship.RequestVariant.TypeID("get_status_request_v0"),
+            Impl:   &ship.GetStatusRequestV0{},
+        },
+    })
+
+    if err != nil {
+        return err
+    }
+
+    // Send the request.
+    return c.sock.WriteMessage(ws.BinaryMessage, bytes)
+}
+
 // Read messages from the client.
 func (c *ShipClient) Read() (*ShipClientError) {
 
