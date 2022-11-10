@@ -51,7 +51,7 @@ func NewClient(startBlock uint32, endBlock uint32, irreversibleOnly bool) (*Ship
     }
 }
 
-func (this *ShipClient) Connect(host string) (error) {
+func (c *ShipClient) Connect(host string) (error) {
 
     url := url.URL{Scheme: "ws", Host: host,  Path: "/"}
 
@@ -60,23 +60,23 @@ func (this *ShipClient) Connect(host string) (error) {
         return err
     }
 
-    this.sock = sock
+    c.sock = sock
     return nil
 }
 
-func (this *ShipClient) SendBlocksRequest() (error) {
+func (c *ShipClient) SendBlocksRequest() (error) {
 
     // Encode the request.
     bytes, err := eos.MarshalBinary(ship.Request{
         BaseVariant: eos.BaseVariant{
             TypeID: ship.RequestVariant.TypeID("get_blocks_request_v0"),
             Impl:   &ship.GetBlocksRequestV0{
-                StartBlockNum: this.StartBlock,
-                EndBlockNum: this.EndBlock,
-                MaxMessagesInFlight: this.MaxMessagesInFlight,
-                IrreversibleOnly: this.IrreversibleOnly,
+                StartBlockNum: c.StartBlock,
+                EndBlockNum: c.EndBlock,
+                MaxMessagesInFlight: c.MaxMessagesInFlight,
+                IrreversibleOnly: c.IrreversibleOnly,
                 FetchBlock: true,
-                FetchTraces: this.TraceHandler != nil,
+                FetchTraces: c.TraceHandler != nil,
                 FetchDeltas: false,
             },
         },
@@ -87,25 +87,25 @@ func (this *ShipClient) SendBlocksRequest() (error) {
     }
 
     // Send the request.
-    return this.sock.WriteMessage(ws.BinaryMessage, bytes)
+    return c.sock.WriteMessage(ws.BinaryMessage, bytes)
 }
 
-func (this *ShipClient) Read() (*ShipClientError) {
+func (c *ShipClient) Read() (*ShipClientError) {
 
     for {
         var msg ship.Result
 
-        msg_type, data, err := this.sock.ReadMessage()
+        msg_type, data, err := c.sock.ReadMessage()
         if err != nil {
             return &ShipClientError{ErrSockRead, err.Error()}
         }
 
         // Check if we need to ack messages
-        this.unconfirmed += 1;
-        if this.unconfirmed >= this.MaxMessagesInFlight {
-            req := ship.NewGetBlocksAck(this.unconfirmed)
-            err = this.sock.WriteMessage(ws.BinaryMessage, req)
-            this.unconfirmed = 0
+        c.unconfirmed += 1;
+        if c.unconfirmed >= c.MaxMessagesInFlight {
+            req := ship.NewGetBlocksAck(c.unconfirmed)
+            err = c.sock.WriteMessage(ws.BinaryMessage, req)
+            c.unconfirmed = 0
             if err != nil {
                 return &ShipClientError{ErrACK, err.Error()}
             }
@@ -128,16 +128,16 @@ func (this *ShipClient) Read() (*ShipClientError) {
                 continue
             }
 
-            if this.BlockHandler != nil {
-                this.BlockHandler(block)
+            if c.BlockHandler != nil {
+                c.BlockHandler(block)
             }
 
-            if block.Traces != nil && this.TraceHandler != nil {
-                this.TraceHandler(block.Traces.AsTransactionTracesV0())
+            if block.Traces != nil && c.TraceHandler != nil {
+                c.TraceHandler(block.Traces.AsTransactionTracesV0())
             }
 
-            if block.ThisBlock.BlockNum + 1 >= this.EndBlock {
-                return this.SendCloseMessage()
+            if block.ThisBlock.BlockNum + 1 >= c.EndBlock {
+                return c.SendCloseMessage()
             }
 
             break
@@ -145,8 +145,8 @@ func (this *ShipClient) Read() (*ShipClientError) {
 
         status, ok := msg.Impl.(*ship.GetStatusResultV0)
         if ok {
-            if this.StatusHandler != nil {
-                this.StatusHandler(status)
+            if c.StatusHandler != nil {
+                c.StatusHandler(status)
             }
         }
         break
@@ -155,13 +155,13 @@ func (this *ShipClient) Read() (*ShipClientError) {
     return nil
 }
 
-func (this *ShipClient) SendCloseMessage() (*ShipClientError) {
+func (c *ShipClient) SendCloseMessage() (*ShipClientError) {
 
-    if this.IsOpen() == false {
+    if c.IsOpen() == false {
         return &ShipClientError{ErrNotConnected, "Socket not connected"}
     }
 
-    err := this.sock.WriteMessage(ws.CloseMessage, ws.FormatCloseMessage(ws.CloseNormalClosure, ""))
+    err := c.sock.WriteMessage(ws.CloseMessage, ws.FormatCloseMessage(ws.CloseNormalClosure, ""))
     if err != nil {
         return &ShipClientError{ErrSendClose, err.Error()}
     }
@@ -169,21 +169,21 @@ func (this *ShipClient) SendCloseMessage() (*ShipClientError) {
     return nil
 }
 
-func (this *ShipClient) IsOpen() bool {
-    return this.sock != nil
+func (c *ShipClient) IsOpen() bool {
+    return c.sock != nil
 }
 
-func (this *ShipClient) Close() (*ShipClientError) {
+func (c *ShipClient) Close() (*ShipClientError) {
 
-    if this.IsOpen() == false {
+    if c.IsOpen() == false {
         return &ShipClientError{ErrNotConnected, "Socket not connected"}
     }
 
-    this.sock.Close()
-    this.sock = nil
+    c.sock.Close()
+    c.sock = nil
 
-    if this.CloseHandler != nil {
-        this.CloseHandler()
+    if c.CloseHandler != nil {
+        c.CloseHandler()
     }
 
     return nil
