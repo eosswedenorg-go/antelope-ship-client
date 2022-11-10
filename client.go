@@ -2,6 +2,7 @@
 package eos_ship_client
 
 import (
+    "bytes"
     "net/url"
     ws "github.com/gorilla/websocket"
     eos "github.com/eoscanada/eos-go"
@@ -139,6 +140,18 @@ func (c *ShipClient) Read() (*ShipClientError) {
             if err != nil {
                 return &ShipClientError{ErrACK, err.Error()}
             }
+        }
+
+        if msg_type == ws.TextMessage {
+            if c.InitHandler != nil {
+                abi, err := eos.NewABI(bytes.NewReader(data))
+                if err != nil {
+                    return &ShipClientError{ErrParse, "Failed to decode ABI"}
+                }
+
+                c.InitHandler(abi)
+            }
+            break
         }
 
         if msg_type != ws.BinaryMessage {
