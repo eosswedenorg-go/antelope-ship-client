@@ -111,6 +111,20 @@ func (c *ShipClient) ConnectURL(url url.URL) error {
     return nil
 }
 
+func (c *ShipClient) blockRequest() *ship.GetBlocksRequestV0 {
+
+    return &ship.GetBlocksRequestV0{
+        StartBlockNum: c.StartBlock,
+        EndBlockNum: c.EndBlock,
+        MaxMessagesInFlight: c.MaxMessagesInFlight,
+        IrreversibleOnly: c.IrreversibleOnly,
+        FetchBlock: true,
+        FetchTraces: c.TraceHandler != nil,
+        FetchDeltas: false,
+        HavePositions: []*ship.BlockPosition{},
+    }
+}
+
 // Read messages from the client and calls the appropriate callback function.
 //
 // This function will block until atleast one valid message is processed or an error occured.
@@ -120,16 +134,7 @@ func (c *ShipClient) SendBlocksRequest() (error) {
     bytes, err := eos.MarshalBinary(ship.Request{
         BaseVariant: eos.BaseVariant{
             TypeID: ship.RequestVariant.TypeID("get_blocks_request_v0"),
-            Impl:   &ship.GetBlocksRequestV0{
-                StartBlockNum: c.StartBlock,
-                EndBlockNum: c.EndBlock,
-                MaxMessagesInFlight: c.MaxMessagesInFlight,
-                IrreversibleOnly: c.IrreversibleOnly,
-                FetchBlock: true,
-                FetchTraces: c.TraceHandler != nil,
-                FetchDeltas: false,
-                HavePositions: []*ship.BlockPosition{},
-            },
+            Impl:   c.blockRequest(),
         },
     })
 
