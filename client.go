@@ -1,4 +1,35 @@
+/*
+# Callback functions
 
+This library uses callback functions to allow the users to execute the code
+needed when certain events are triggered.
+
+the ShipClient struct accepts the following callback functions
+
+    InitHandler func(*eos.ABI)
+
+
+Called when the client receives the first message from the SHIP node on connection.
+This message contains the abi with all the information about the functions/types exposed by the websocket api.
+
+    BlockHandler func(*ship.GetBlocksResultV0)
+
+Called when the client reveives a block message from the server.
+
+    TraceHandler func([]*ship.TransactionTraceV0)
+
+When the client reveives a block message from the server and the
+Block has any traces attached to it. these traces are then passed to this callback.
+
+    StatusHandler func(*ship.GetStatusResultV0)
+
+Called when the client reveives a status message.
+
+
+    CloseHandler func()
+
+Called when a client has closed the socket connection (in `(*ShipClient) Close()` function)
+*/
 package eos_ship_client
 
 import (
