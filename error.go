@@ -18,7 +18,7 @@ type ShipClientError struct {
     Text string
 }
 
-func (e *ShipClientError) Error() string {
+func (e ShipClientError) Error() string {
 
     var t string
 
