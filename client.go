@@ -161,14 +161,14 @@ func (c *ShipClient) SendStatusRequest() (error) {
 }
 
 // Read messages from the client.
-func (c *ShipClient) Read() (*ShipClientError) {
+func (c *ShipClient) Read() (error) {
 
     for {
         var msg ship.Result
 
         msg_type, data, err := c.sock.ReadMessage()
         if err != nil {
-            return &ShipClientError{ErrSockRead, err.Error()}
+            return ShipClientError{ErrSockRead, err.Error()}
         }
 
         // Check if we need to ack messages
@@ -178,7 +178,7 @@ func (c *ShipClient) Read() (*ShipClientError) {
             err = c.sock.WriteMessage(ws.BinaryMessage, req)
             c.unconfirmed = 0
             if err != nil {
-                return &ShipClientError{ErrACK, err.Error()}
+                return ShipClientError{ErrACK, err.Error()}
             }
         }
 
@@ -186,7 +186,7 @@ func (c *ShipClient) Read() (*ShipClientError) {
             if c.InitHandler != nil {
                 abi, err := eos.NewABI(bytes.NewReader(data))
                 if err != nil {
-                    return &ShipClientError{ErrParse, "Failed to decode ABI"}
+                    return ShipClientError{ErrParse, "Failed to decode ABI"}
                 }
 
                 c.InitHandler(abi)
@@ -195,12 +195,12 @@ func (c *ShipClient) Read() (*ShipClientError) {
         }
 
         if msg_type != ws.BinaryMessage {
-            return &ShipClientError{ErrParse, "Can only decode binary messages"}
+            return ShipClientError{ErrParse, "Can only decode binary messages"}
         }
 
         // Unpack the message
         if err = eos.UnmarshalBinary(data, &msg); err != nil {
-            return &ShipClientError{ErrParse, err.Error()}
+            return ShipClientError{ErrParse, err.Error()}
         }
 
         // Parse message and route to correct callback.
@@ -238,15 +238,15 @@ func (c *ShipClient) Read() (*ShipClientError) {
 
 // Sends a close message to the server
 // indicating that the client wants to terminate the connection.
-func (c *ShipClient) SendCloseMessage() (*ShipClientError) {
+func (c *ShipClient) SendCloseMessage() error {
 
     if ! c.IsOpen() {
-        return &ShipClientError{ErrNotConnected, "Socket not connected"}
+        return ShipClientError{ErrNotConnected, "Socket not connected"}
     }
 
     err := c.sock.WriteMessage(ws.CloseMessage, ws.FormatCloseMessage(ws.CloseNormalClosure, ""))
     if err != nil {
-        return &ShipClientError{ErrSendClose, err.Error()}
+        return ShipClientError{ErrSendClose, err.Error()}
     }
 
     return nil
@@ -261,10 +261,10 @@ func (c *ShipClient) IsOpen() bool {
 //
 // NOTE: This method closes the underlying network connection without
 // sending or waiting for a close message.
-func (c *ShipClient) Close() (*ShipClientError) {
+func (c *ShipClient) Close() error {
 
     if ! c.IsOpen() {
-        return &ShipClientError{ErrNotConnected, "Socket not connected"}
+        return ShipClientError{ErrNotConnected, "Socket not connected"}
     }
 
     c.sock.Close()

@@ -119,11 +119,12 @@ func Example_basic() {
         for {
             err := client.Read()
             if err != nil {
-                log.Print(err.Error())
+                log.Print(err)
 
-                // Bail out on socket read error.
-                if err.Type == shipclient.ErrSockRead {
-                    break
+                if e, ok := err.(shipclient.ShipClientError); ok {
+                    if e.Type == shipclient.ErrSockRead {
+                        break
+                    }
                 }
             }
         }
