@@ -1,5 +1,7 @@
 # Eos SHIP Client
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/eosswedenorg-go/eos-ship-client.svg)](https://pkg.go.dev/github.com/eosswedenorg-go/eos-ship-client)
+
 Client Implementation of eosio state-history websocket.
 
 ### Install package
@@ -8,9 +10,13 @@ Client Implementation of eosio state-history websocket.
 go get -u github.com/eosswedenorg-go/eos-ship-client@latest
 ```
 
+### Documentation
+
+Documentation can be found over at [pkg.go.dev](https://pkg.go.dev/github.com/eosswedenorg-go/eos-ship-client)
+
 ### Examples
 
-* [Basic](examples/basic/main.go)
+* [Basic](example_basic_test.go)
 
 ### Author
 

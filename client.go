@@ -1,3 +1,4 @@
+
 package eos_ship_client
 
 import (
@@ -55,12 +56,19 @@ func NewClient(startBlock uint32, endBlock uint32, irreversibleOnly bool) (*Ship
 }
 
 // Connect the client to a ship node
+//
+// Returns an error if the connection fails, nil otherwise.
+//
+// NOTE: this is equivalent to calling
+//      c.ConnectURL(url.URL{Scheme: "ws", Host: host, Path: "/"})
 func (c *ShipClient) Connect(host string) error {
 
    return c.ConnectURL(url.URL{Scheme: "ws", Host: host, Path: "/"})
 }
 
 // Connect the client to a ship node
+//
+// Returns an error if the connection fails, nil otherwise.
 func (c *ShipClient) ConnectURL(url url.URL) error {
 
     sock, _, err := ws.DefaultDialer.Dial(url.String(), nil)
@@ -72,8 +80,9 @@ func (c *ShipClient) ConnectURL(url url.URL) error {
     return nil
 }
 
-// Send a block request to the ship server.
-// This tells the server to start sending blocks to the client.
+// Read messages from the client and calls the appropriate callback function.
+//
+// This function will block until atleast one valid message is processed or an error occured.
 func (c *ShipClient) SendBlocksRequest() (error) {
 
     // Encode the request.
@@ -196,7 +205,7 @@ func (c *ShipClient) Read() (*ShipClientError) {
     return nil
 }
 
-// Sends a close message to the server.
+// Sends a close message to the server
 // indicating that the client wants to terminate the connection.
 func (c *ShipClient) SendCloseMessage() (*ShipClientError) {
 

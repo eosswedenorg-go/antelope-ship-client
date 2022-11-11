@@ -1,5 +1,5 @@
 
-package main
+package eos_ship_client_test
 
 import (
     "log"
@@ -59,7 +59,7 @@ func processStatus(status *ship.GetStatusResultV0) {
     log.Println("ChainStateBeginBlock", status.ChainStateBeginBlock, "ChainStateEndBlock", status.ChainStateEndBlock)
 }
 
-func main() {
+func Example_basic() {
 
     // Create done and interrupt channels.
     done := make(chan bool)
