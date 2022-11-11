@@ -128,6 +128,7 @@ func (c *ShipClient) SendBlocksRequest() (error) {
                 FetchBlock: true,
                 FetchTraces: c.TraceHandler != nil,
                 FetchDeltas: false,
+                HavePositions: []*ship.BlockPosition{},
             },
         },
     })
