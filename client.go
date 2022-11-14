@@ -221,7 +221,7 @@ func (c *ShipClient) Read() (error) {
                 c.BlockHandler(block)
             }
 
-            if block.Traces != nil && c.TraceHandler != nil {
+            if block.Traces != nil && len(block.Traces.Elem) > 0 && c.TraceHandler != nil {
                 c.TraceHandler(block.Traces.AsTransactionTracesV0())
             }
 
