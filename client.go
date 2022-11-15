@@ -172,20 +172,9 @@ func (c *ShipClient) Read() (error) {
     for {
         var msg ship.Result
 
-        msg_type, data, err := c.sock.ReadMessage()
+        msg_type, data, err := c.ReadRaw()
         if err != nil {
-            return ShipClientError{ErrSockRead, err.Error()}
-        }
-
-        // Check if we need to ack messages
-        c.unconfirmed += 1;
-        if c.unconfirmed >= c.MaxMessagesInFlight {
-            req := ship.NewGetBlocksAck(c.unconfirmed)
-            err = c.sock.WriteMessage(ws.BinaryMessage, req)
-            c.unconfirmed = 0
-            if err != nil {
-                return ShipClientError{ErrACK, err.Error()}
-            }
+            return err
         }
 
         if msg_type == ws.TextMessage {
@@ -240,6 +229,28 @@ func (c *ShipClient) Read() (error) {
     }
 
     return nil
+}
+
+func (c *ShipClient) ReadRaw() (int, []byte, error) {
+
+    // Read message from socket.
+    msg_type, data, err := c.sock.ReadMessage()
+    if err != nil {
+        return msg_type, data, ShipClientError{ErrSockRead, err.Error()}
+    }
+
+    // Check if we need to ack messages
+    c.unconfirmed += 1;
+    if c.unconfirmed >= c.MaxMessagesInFlight {
+        req := ship.NewGetBlocksAck(c.unconfirmed)
+        err = c.sock.WriteMessage(ws.BinaryMessage, req)
+        c.unconfirmed = 0
+        if err != nil {
+            return msg_type, data, ShipClientError{ErrACK, err.Error()}
+        }
+    }
+
+    return msg_type, data, nil
 }
 
 // Sends a close message to the server
