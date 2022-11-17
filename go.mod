@@ -1,6 +1,6 @@
 module github.com/eosswedenorg-go/eos-ship-client
 
-go 1.14
+go 1.16
 
 require (
 	github.com/eoscanada/eos-go v0.10.3-0.20221117104514-64cafd714c60
