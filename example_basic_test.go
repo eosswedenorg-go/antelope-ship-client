@@ -17,11 +17,11 @@ import (
 // -----------------------------
 
 // IP and port to the ship node.
-var shipHost string = "127.0.0.1:8689"
+var shipHost string = "127.0.0.1:8089"
 
 // Url to the eos api on the same node as ship is running.
 // Use this to fetch a sane value for `startBlock`
-var eosAPIURL string  // = "http://127.0.0.1:8688"
+var eosAPIURL string  // = "http://127.0.0.1:8088"
 
 // If `eosAPIURL` is not set, this is the block
 // where we request ship to start sending blocks from.
