@@ -1,5 +1,6 @@
 # Eos SHIP Client
 
+[![Test](https://github.com/eosswedenorg-go/eos-ship-client/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/eosswedenorg-go/eos-ship-client/actions/workflows/test.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/eosswedenorg-go/eos-ship-client.svg)](https://pkg.go.dev/github.com/eosswedenorg-go/eos-ship-client)
 
 Client Implementation of eosio state-history websocket.
