@@ -15,14 +15,8 @@ import (
 
     "testing"
     "gotest.tools/v3/assert"
-    "github.com/google/go-cmp/cmp"
+    "github.com/google/go-cmp/cmp/cmpopts"
 )
-
-// Compare function for ecc.Signature
-var sigCmp cmp.Option = cmp.Comparer(func(x, y ecc.Signature) bool {
-    // It's good enough for us if the string representation matches
-    return x.String() == y.String()
-})
 
 var upgrader ws.Upgrader
 
@@ -340,10 +334,11 @@ func TestShipClient_ReadTraceMessages(t *testing.T) {
     }
 
     client.TraceHandler = func(r []*ship.TransactionTraceV0) {
+        opts := cmpopts.IgnoreUnexported(ecc.Signature{})
         called = true
         assert.Equal(t, 2, len(r))
-        assert.DeepEqual(t, trace0, *r[0], sigCmp)
-        assert.DeepEqual(t, trace1, *r[1], sigCmp)
+        assert.DeepEqual(t, trace0, *r[0], opts)
+        assert.DeepEqual(t, trace1, *r[1], opts)
     }
 
     block0, err := loadBlock("testdata/antelope_bock279028468.hex")
