@@ -59,7 +59,7 @@ func (h testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer wsock.Close()
 
-	for true {
+	for {
 
 		mt, data, err := wsock.ReadMessage()
 		if err != nil {
