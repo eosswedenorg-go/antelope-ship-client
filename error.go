@@ -5,11 +5,11 @@ import (
 )
 
 const (
-	ErrNotConnected = 1
-	ErrSockRead     = 2
-	ErrSendClose    = 3
-	ErrACK          = 4
-	ErrParse        = 5
+	ErrNotConnected = iota
+	ErrSockRead
+	ErrSendClose
+	ErrACK
+	ErrParse
 )
 
 type ShipClientError struct {
