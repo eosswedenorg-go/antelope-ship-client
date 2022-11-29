@@ -25,6 +25,8 @@ type testHandler struct {
 
 	responses [][]byte
 
+	CloseError bool
+
 	ExpectedBlockRequest *ship.GetBlocksRequestV0
 	RespondBlocks        []ship.GetBlocksResultV0
 }
@@ -57,7 +59,12 @@ func (h testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.t.Logf("Upgrade: %v", err)
 		return
 	}
-	defer wsock.Close()
+
+	if h.CloseError {
+		wsock.Close()
+	} else {
+		defer wsock.Close()
+	}
 
 	for {
 
@@ -107,6 +114,44 @@ func TestShipClient_ConnectFail(t *testing.T) {
 	client := NewClient(0, NULL_BLOCK_NUMBER, false)
 	err := client.Connect(":9999")
 	assert.Error(t, err, "dial tcp :9999: connect: connection refused")
+}
+
+func TestShipClient_ReadFromNormalClosedSocket(t *testing.T) {
+	handler := testHandler{t: t}
+
+	s := newServerWithHandler(t, &handler)
+	defer s.Close()
+
+	client := NewClient(23617231, NULL_BLOCK_NUMBER, false)
+	err := client.ConnectURL(*s.URL)
+	assert.NilError(t, err)
+	err = client.SendCloseMessage()
+	assert.NilError(t, err)
+	err = client.Read()
+	assert.Error(t, err, "shipclient - socket closed: websocket: close 1000 (normal)")
+
+	shErr, ok := err.(ShipClientError)
+	assert.Equal(t, true, ok, "Failed to cast error to ShipClientError")
+	assert.Equal(t, shErr.Type, ErrSockClosed)
+}
+
+func TestShipClient_ReadFromAbnormalClosedSocket(t *testing.T) {
+	handler := testHandler{t: t, CloseError: true}
+
+	s := newServerWithHandler(t, &handler)
+	defer s.Close()
+
+	client := NewClient(72367186, NULL_BLOCK_NUMBER, false)
+	err := client.ConnectURL(*s.URL)
+	assert.NilError(t, err)
+	err = client.SendCloseMessage()
+	assert.NilError(t, err)
+	err = client.Read()
+	assert.Error(t, err, "shipclient - socket closed: websocket: close 1006 (abnormal closure): unexpected EOF")
+
+	shErr, ok := err.(ShipClientError)
+	assert.Equal(t, true, ok, "Failed to cast error to ShipClientError")
+	assert.Equal(t, shErr.Type, ErrSockClosed)
 }
 
 func TestShipClient_ReadBlockMessages(t *testing.T) {

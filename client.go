@@ -225,7 +225,13 @@ func (c *ShipClient) ReadRaw() (int, []byte, error) {
 	// Read message from socket.
 	msg_type, data, err := c.sock.ReadMessage()
 	if err != nil {
-		return msg_type, data, ShipClientError{ErrSockRead, err.Error()}
+
+		errType := ErrSockRead
+		if _, ok := err.(*ws.CloseError); ok {
+			errType = ErrSockClosed
+		}
+
+		return msg_type, data, ShipClientError{errType, err.Error()}
 	}
 
 	// Check if we need to ack messages
