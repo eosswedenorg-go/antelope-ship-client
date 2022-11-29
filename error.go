@@ -7,6 +7,7 @@ import (
 const (
 	ErrNotConnected = iota
 	ErrSockRead
+	ErrSockClosed
 	ErrSendClose
 	ErrACK
 	ErrParse
@@ -23,6 +24,8 @@ func (e ShipClientError) Error() string {
 	switch e.Type {
 	case ErrNotConnected:
 		t = "not connected"
+	case ErrSockClosed:
+		t = "socket closed"
 	case ErrSockRead:
 		t = "socket read"
 	case ErrSendClose:
