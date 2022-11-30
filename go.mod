@@ -1,4 +1,4 @@
-module github.com/eosswedenorg-go/eos-ship-client
+module github.com/eosswedenorg-go/antelope-ship-client
 
 go 1.16
 

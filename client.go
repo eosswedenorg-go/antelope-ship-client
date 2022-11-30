@@ -28,7 +28,7 @@ Called when the client reveives a status message.
 
 Called when a client has closed the socket connection (in `(*ShipClient) Close()` function)
 */
-package eos_ship_client
+package antelope_ship_client
 
 import (
 	"bytes"

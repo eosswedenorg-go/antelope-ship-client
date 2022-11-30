@@ -1,4 +1,4 @@
-package eos_ship_client
+package antelope_ship_client
 
 import (
 	"encoding/hex"

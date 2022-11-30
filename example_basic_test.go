@@ -1,4 +1,4 @@
-package eos_ship_client_test
+package antelope_ship_client_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 
 	eos "github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ship"
-	shipclient "github.com/eosswedenorg-go/eos-ship-client"
+	shipclient "github.com/eosswedenorg-go/antelope-ship-client"
 )
 
 // -----------------------------
@@ -19,14 +19,14 @@ import (
 // IP and port to the ship node.
 var shipHost string = "127.0.0.1:8089"
 
-// Url to the eos api on the same node as ship is running.
+// Url to the antelope api on the same node as ship is running.
 // Use this to fetch a sane value for `startBlock`
-var eosAPIURL string // = "http://127.0.0.1:8088"
+var APIURL string // = "http://127.0.0.1:8088"
 
-// If `eosAPIURL` is not set, this is the block
+// If `APIURL` is not set, this is the block
 // where we request ship to start sending blocks from.
 // This should be something other than zero. check a block explorer or /v1/chain/get_info for the latest block number.
-// or use eosAPIURL to make the code fetch it itself.
+// or use APIURL to make the code fetch it itself.
 var startBlock uint32 = 0
 
 // True if the client should request a status message from the ship server on startup.
@@ -66,8 +66,8 @@ func Example_basic() {
 	signal.Notify(interrupt, os.Interrupt)
 
 	// Get start block from chain info
-	if eosAPIURL != "" {
-		chainInfo, err := eos.New(eosAPIURL).GetInfo(context.Background())
+	if APIURL != "" {
+		chainInfo, err := eos.New(APIURL).GetInfo(context.Background())
 		if err == nil {
 			startBlock = chainInfo.HeadBlockNum
 		} else {
