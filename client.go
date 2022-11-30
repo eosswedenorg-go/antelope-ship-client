@@ -276,7 +276,8 @@ func (c *ShipClient) SendCloseMessage() error {
 		return ShipClientError{ErrNotConnected, "Socket not connected"}
 	}
 
-	err := c.sock.WriteMessage(ws.CloseMessage, ws.FormatCloseMessage(ws.CloseNormalClosure, ""))
+	msg := ws.FormatCloseMessage(ws.CloseNormalClosure, "")
+	err := c.sock.WriteMessage(ws.CloseMessage, msg)
 	if err != nil {
 		return ShipClientError{ErrSendClose, err.Error()}
 	}
