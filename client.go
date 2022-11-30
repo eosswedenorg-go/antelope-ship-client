@@ -120,9 +120,8 @@ func (c *ShipClient) blockRequest() *ship.GetBlocksRequestV0 {
 	}
 }
 
-// Read messages from the client and calls the appropriate callback function.
-//
-// This function will block until atleast one valid message is processed or an error occured.
+// Send a blocks request to the ship server.
+// This tells the server to start sending block message to the client.
 func (c *ShipClient) SendBlocksRequest() error {
 	// Encode the request.
 	bytes, err := eos.MarshalBinary(ship.Request{
@@ -157,7 +156,9 @@ func (c *ShipClient) SendStatusRequest() error {
 	return c.sock.WriteMessage(ws.BinaryMessage, bytes)
 }
 
-// Read messages from the client.
+// Read messages from the client and calls the appropriate callback function.
+//
+// This function will block until atleast one valid message is processed or an error occured.
 func (c *ShipClient) Read() error {
 	for {
 		var msg ship.Result
