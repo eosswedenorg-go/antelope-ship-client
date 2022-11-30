@@ -107,6 +107,12 @@ func (c *ShipClient) ConnectURL(url url.URL) error {
 	return nil
 }
 
+// Returns the number of messages the client has received
+// but have not yet been confirmed as having been received by the client
+func (c ShipClient) UnconfirmedMessages() uint32 {
+	return c.unconfirmed
+}
+
 func (c *ShipClient) blockRequest() *ship.GetBlocksRequestV0 {
 	return &ship.GetBlocksRequestV0{
 		StartBlockNum:       c.StartBlock,
