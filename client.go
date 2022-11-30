@@ -255,6 +255,22 @@ func (c *ShipClient) ReadRaw() (int, []byte, error) {
 	return msg_type, data, nil
 }
 
+// Sends an Acknowledgment message that tells th
+// server that we have received X number of messages
+// where X is the number returned by c.UnconfirmedMessages().
+//
+// This is normally called internally by Read()
+// So only use this manually if you know that you need to.
+func (c *ShipClient) SendACK() error {
+	req := ship.NewGetBlocksAck(c.unconfirmed)
+	err := c.sock.WriteMessage(ws.BinaryMessage, req)
+	c.unconfirmed = 0
+	if err != nil {
+		return ShipClientError{ErrACK, err.Error()}
+	}
+	return nil
+}
+
 // Sends a close message to the server
 // indicating that the client wants to terminate the connection.
 func (c *ShipClient) SendCloseMessage() error {
