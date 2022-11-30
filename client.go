@@ -244,11 +244,9 @@ func (c *ShipClient) ReadRaw() (int, []byte, error) {
 	// Check if we need to ack messages
 	c.unconfirmed += 1
 	if c.unconfirmed >= c.MaxMessagesInFlight {
-		req := ship.NewGetBlocksAck(c.unconfirmed)
-		err = c.sock.WriteMessage(ws.BinaryMessage, req)
-		c.unconfirmed = 0
+		err = c.SendACK()
 		if err != nil {
-			return msg_type, data, ShipClientError{ErrACK, err.Error()}
+			return msg_type, data, err
 		}
 	}
 
