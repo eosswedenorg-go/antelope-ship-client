@@ -41,6 +41,14 @@ import (
 
 const NULL_BLOCK_NUMBER uint32 = 0xffffffff
 
+type (
+	InitFn   func(*eos.ABI)
+	BlockFn  func(*ship.GetBlocksResultV0)
+	TraceFn  func([]*ship.TransactionTraceV0)
+	StatusFn func(*ship.GetStatusResultV0)
+	CloseFn  func()
+)
+
 type Client struct {
 	// Socket connection
 	sock *ws.Conn
@@ -61,11 +69,11 @@ type Client struct {
 	MaxMessagesInFlight uint32
 
 	// Callback functions
-	InitHandler   func(*eos.ABI)
-	BlockHandler  func(*ship.GetBlocksResultV0)
-	TraceHandler  func([]*ship.TransactionTraceV0)
-	StatusHandler func(*ship.GetStatusResultV0)
-	CloseHandler  func()
+	InitHandler   InitFn
+	BlockHandler  BlockFn
+	TraceHandler  TraceFn
+	StatusHandler StatusFn
+	CloseHandler  CloseFn
 }
 
 // Create a new client
