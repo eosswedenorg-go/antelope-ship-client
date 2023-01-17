@@ -102,16 +102,38 @@ func loadBlock(file string) ([]byte, error) {
 	return hex.DecodeString(string(hex_data))
 }
 
+func TestClient_ConstructWithOptions(t *testing.T) {
+	client := NewClient(WithStartBlock(1234),
+		WithEndBlock(5000),
+		WithIrreversibleOnly(true),
+		WithMaxMessagesInFlight(20))
+
+	assert.Equal(t, client.StartBlock, uint32(1234))
+	assert.Equal(t, client.EndBlock, uint32(5000))
+	assert.Equal(t, client.IrreversibleOnly, true)
+	assert.Equal(t, client.MaxMessagesInFlight, uint32(20))
+}
+
+func TestClient_ConstructWithCustomOption(t *testing.T) {
+	client := NewClient(func(c *Client) {
+		c.StartBlock = 4000
+		c.EndBlock = 5000
+	})
+
+	assert.Equal(t, client.StartBlock, uint32(4000))
+	assert.Equal(t, client.EndBlock, uint32(5000))
+}
+
 func TestShipClient_ConnectOK(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
-	client := NewClient(0, NULL_BLOCK_NUMBER, false)
+	client := NewClient()
 	assert.NilError(t, client.ConnectURL(*s.URL))
 }
 
 func TestShipClient_ConnectFail(t *testing.T) {
-	client := NewClient(0, NULL_BLOCK_NUMBER, false)
+	client := NewClient()
 	err := client.Connect(":9999")
 	assert.Error(t, err, "dial tcp :9999: connect: connection refused")
 }
@@ -122,7 +144,7 @@ func TestShipClient_ReadFromNormalClosedSocket(t *testing.T) {
 	s := newServerWithHandler(t, &handler)
 	defer s.Close()
 
-	client := NewClient(23617231, NULL_BLOCK_NUMBER, false)
+	client := NewClient(WithStartBlock(23617231))
 	err := client.ConnectURL(*s.URL)
 	assert.NilError(t, err)
 	err = client.SendCloseMessage()
@@ -141,7 +163,7 @@ func TestShipClient_ReadFromAbnormalClosedSocket(t *testing.T) {
 	s := newServerWithHandler(t, &handler)
 	defer s.Close()
 
-	client := NewClient(72367186, NULL_BLOCK_NUMBER, false)
+	client := NewClient(WithStartBlock(72367186))
 	err := client.ConnectURL(*s.URL)
 	assert.NilError(t, err)
 	err = client.SendCloseMessage()
@@ -176,11 +198,11 @@ func TestShipClient_ReadBlockMessages(t *testing.T) {
 		},
 	}
 
-	client := NewClient(1234, NULL_BLOCK_NUMBER, false)
-	client.BlockHandler = func(r *ship.GetBlocksResultV0) {
+	block_handler := func(r *ship.GetBlocksResultV0) {
 		called = true
 		assert.DeepEqual(t, expected, *r)
 	}
+	client := NewClient(WithStartBlock(1234), WithBlockHandler(block_handler))
 
 	handler := testHandler{
 		t:                    t,
@@ -218,8 +240,6 @@ func TestShipClient_ReadBlockMessages(t *testing.T) {
 
 func TestShipClient_ReadTraceMessages(t *testing.T) {
 	called := false
-
-	client := NewClient(279028468, NULL_BLOCK_NUMBER, false)
 
 	// First trace 71f9afc519eab1bcf599bded5848f3167c1603238f4eb0f7998565b559b0b988
 	trace0 := ship.TransactionTraceV0{
@@ -372,13 +392,15 @@ func TestShipClient_ReadTraceMessages(t *testing.T) {
 		},
 	}
 
-	client.TraceHandler = func(r []*ship.TransactionTraceV0) {
+	trace_handler := func(r []*ship.TransactionTraceV0) {
 		opts := cmpopts.IgnoreUnexported(ecc.Signature{})
 		called = true
 		assert.Equal(t, 2, len(r))
 		assert.DeepEqual(t, trace0, *r[0], opts)
 		assert.DeepEqual(t, trace1, *r[1], opts)
 	}
+
+	client := NewClient(WithStartBlock(279028468), WithTraceHandler(trace_handler))
 
 	block0, err := loadBlock("testdata/antelope_bock279028468.hex")
 	assert.NilError(t, err)

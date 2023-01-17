@@ -76,18 +76,81 @@ type Client struct {
 	CloseHandler  CloseFn
 }
 
+type Option func(*Client)
+
 // Create a new client
-func NewClient(startBlock uint32, endBlock uint32, irreversibleOnly bool) *Client {
-	return &Client{
-		sock:                nil,
-		unconfirmed:         0,
-		StartBlock:          startBlock,
-		EndBlock:            endBlock,
-		IrreversibleOnly:    irreversibleOnly,
+func NewClient(options ...Option) *Client {
+	c := &Client{
+		EndBlock:            NULL_BLOCK_NUMBER,
 		MaxMessagesInFlight: 10,
-		StatusHandler:       nil,
-		BlockHandler:        nil,
-		CloseHandler:        nil,
+	}
+
+	for _, opt := range options {
+		opt(c)
+	}
+	return c
+}
+
+// Option to set Client.StartBlock
+func WithStartBlock(value uint32) Option {
+	return func(c *Client) {
+		c.StartBlock = value
+	}
+}
+
+// Option to set Client.EndBlock
+func WithEndBlock(value uint32) Option {
+	return func(c *Client) {
+		c.EndBlock = value
+	}
+}
+
+// Option to set Client.IrreversibleOnly
+func WithIrreversibleOnly(value bool) Option {
+	return func(c *Client) {
+		c.IrreversibleOnly = value
+	}
+}
+
+// Option to set Client.MaxMessagesInFlight
+func WithMaxMessagesInFlight(value uint32) Option {
+	return func(c *Client) {
+		c.MaxMessagesInFlight = value
+	}
+}
+
+// Option to set Client.InitHandler
+func WithInitHandler(value InitFn) Option {
+	return func(c *Client) {
+		c.InitHandler = value
+	}
+}
+
+// Option to set Client.TraceHandler
+func WithTraceHandler(value TraceFn) Option {
+	return func(c *Client) {
+		c.TraceHandler = value
+	}
+}
+
+// Option to set Client.BlockHandler
+func WithBlockHandler(value BlockFn) Option {
+	return func(c *Client) {
+		c.BlockHandler = value
+	}
+}
+
+// Option to set Client.StatusHandler
+func WithStatusHandler(value StatusFn) Option {
+	return func(c *Client) {
+		c.StatusHandler = value
+	}
+}
+
+// Option to set Client.CloseHandler
+func WithCloseHandler(value CloseFn) Option {
+	return func(c *Client) {
+		c.CloseHandler = value
 	}
 }
 

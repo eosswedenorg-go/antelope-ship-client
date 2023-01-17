@@ -78,7 +78,7 @@ func Example_basic() {
 
 	log.Println("Connecting to ship starting at block:", startBlock)
 
-	client := shipclient.NewClient(startBlock, shipclient.NULL_BLOCK_NUMBER, false)
+	client := shipclient.NewClient(shipclient.WithStartBlock(startBlock))
 	client.InitHandler = initHandler
 	client.BlockHandler = processBlock
 	client.StatusHandler = processStatus
