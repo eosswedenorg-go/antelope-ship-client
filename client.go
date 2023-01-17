@@ -4,7 +4,7 @@
 This library uses callback functions to allow the users to execute the code
 needed when certain events are triggered.
 
-the ShipClient struct accepts the following callback functions
+the Client struct accepts the following callback functions
 
 	InitHandler func(*eos.ABI)
 
@@ -41,7 +41,7 @@ import (
 
 const NULL_BLOCK_NUMBER uint32 = 0xffffffff
 
-type ShipClient struct {
+type Client struct {
 	// Socket connection
 	sock *ws.Conn
 
@@ -69,8 +69,8 @@ type ShipClient struct {
 }
 
 // Create a new client
-func NewClient(startBlock uint32, endBlock uint32, irreversibleOnly bool) *ShipClient {
-	return &ShipClient{
+func NewClient(startBlock uint32, endBlock uint32, irreversibleOnly bool) *Client {
+	return &Client{
 		sock:                nil,
 		unconfirmed:         0,
 		StartBlock:          startBlock,
@@ -90,14 +90,14 @@ func NewClient(startBlock uint32, endBlock uint32, irreversibleOnly bool) *ShipC
 // NOTE: this is equivalent to calling
 //
 //	c.ConnectURL(url.URL{Scheme: "ws", Host: host, Path: "/"})
-func (c *ShipClient) Connect(host string) error {
+func (c *Client) Connect(host string) error {
 	return c.ConnectURL(url.URL{Scheme: "ws", Host: host, Path: "/"})
 }
 
 // Connect the client to a ship node
 //
 // Returns an error if the connection fails, nil otherwise.
-func (c *ShipClient) ConnectURL(url url.URL) error {
+func (c *Client) ConnectURL(url url.URL) error {
 	sock, _, err := ws.DefaultDialer.Dial(url.String(), nil)
 	if err != nil {
 		return err
@@ -109,11 +109,11 @@ func (c *ShipClient) ConnectURL(url url.URL) error {
 
 // Returns the number of messages the client has received
 // but have not yet been confirmed as having been received by the client
-func (c ShipClient) UnconfirmedMessages() uint32 {
+func (c Client) UnconfirmedMessages() uint32 {
 	return c.unconfirmed
 }
 
-func (c *ShipClient) blockRequest() *ship.GetBlocksRequestV0 {
+func (c *Client) blockRequest() *ship.GetBlocksRequestV0 {
 	return &ship.GetBlocksRequestV0{
 		StartBlockNum:       c.StartBlock,
 		EndBlockNum:         c.EndBlock,
@@ -128,7 +128,7 @@ func (c *ShipClient) blockRequest() *ship.GetBlocksRequestV0 {
 
 // Send a blocks request to the ship server.
 // This tells the server to start sending block message to the client.
-func (c *ShipClient) SendBlocksRequest() error {
+func (c *Client) SendBlocksRequest() error {
 	// Encode the request.
 	bytes, err := eos.MarshalBinary(ship.Request{
 		BaseVariant: eos.BaseVariant{
@@ -146,7 +146,7 @@ func (c *ShipClient) SendBlocksRequest() error {
 
 // Send a status request to the ship server.
 // This tells the server to start sending status message to the client.
-func (c *ShipClient) SendStatusRequest() error {
+func (c *Client) SendStatusRequest() error {
 	// Encode the request.
 	bytes, err := eos.MarshalBinary(ship.Request{
 		BaseVariant: eos.BaseVariant{
@@ -165,7 +165,7 @@ func (c *ShipClient) SendStatusRequest() error {
 // Read messages from the client and calls the appropriate callback function.
 //
 // This function will block until atleast one valid message is processed or an error occured.
-func (c *ShipClient) Read() error {
+func (c *Client) Read() error {
 	for {
 		var msg ship.Result
 
@@ -228,7 +228,7 @@ func (c *ShipClient) Read() error {
 	return nil
 }
 
-func (c *ShipClient) ReadRaw() (int, []byte, error) {
+func (c *Client) ReadRaw() (int, []byte, error) {
 	// Read message from socket.
 	msg_type, data, err := c.sock.ReadMessage()
 	if err != nil {
@@ -259,7 +259,7 @@ func (c *ShipClient) ReadRaw() (int, []byte, error) {
 //
 // This is normally called internally by Read()
 // So only use this manually if you know that you need to.
-func (c *ShipClient) SendACK() error {
+func (c *Client) SendACK() error {
 	req := ship.NewGetBlocksAck(c.unconfirmed)
 	err := c.sock.WriteMessage(ws.BinaryMessage, req)
 	c.unconfirmed = 0
@@ -271,7 +271,7 @@ func (c *ShipClient) SendACK() error {
 
 // Sends a close message to the server
 // indicating that the client wants to terminate the connection.
-func (c *ShipClient) SendCloseMessage() error {
+func (c *Client) SendCloseMessage() error {
 	if !c.IsOpen() {
 		return ShipClientError{ErrNotConnected, "Socket not connected"}
 	}
@@ -286,7 +286,7 @@ func (c *ShipClient) SendCloseMessage() error {
 }
 
 // Returns true if the websocket connection is open. false otherwise.
-func (c *ShipClient) IsOpen() bool {
+func (c *Client) IsOpen() bool {
 	return c.sock != nil
 }
 
@@ -294,7 +294,7 @@ func (c *ShipClient) IsOpen() bool {
 //
 // NOTE: This method closes the underlying network connection without
 // sending or waiting for a close message.
-func (c *ShipClient) Close() error {
+func (c *Client) Close() error {
 	if !c.IsOpen() {
 		return ShipClientError{ErrNotConnected, "Socket not connected"}
 	}
