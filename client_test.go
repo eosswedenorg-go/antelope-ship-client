@@ -124,7 +124,7 @@ func TestClient_ConstructWithCustomOption(t *testing.T) {
 	assert.Equal(t, client.EndBlock, uint32(5000))
 }
 
-func TestShipClient_ConnectOK(t *testing.T) {
+func TestClient_ConnectOK(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
@@ -132,13 +132,13 @@ func TestShipClient_ConnectOK(t *testing.T) {
 	assert.NilError(t, client.ConnectURL(*s.URL))
 }
 
-func TestShipClient_ConnectFail(t *testing.T) {
+func TestClient_ConnectFail(t *testing.T) {
 	client := NewClient()
 	err := client.Connect(":9999")
 	assert.Error(t, err, "dial tcp :9999: connect: connection refused")
 }
 
-func TestShipClient_ReadFromNormalClosedSocket(t *testing.T) {
+func TestClient_ReadFromNormalClosedSocket(t *testing.T) {
 	handler := testHandler{t: t}
 
 	s := newServerWithHandler(t, &handler)
@@ -157,7 +157,7 @@ func TestShipClient_ReadFromNormalClosedSocket(t *testing.T) {
 	assert.Equal(t, shErr.Type, ErrSockClosed)
 }
 
-func TestShipClient_ReadFromAbnormalClosedSocket(t *testing.T) {
+func TestClient_ReadFromAbnormalClosedSocket(t *testing.T) {
 	handler := testHandler{t: t, CloseError: true}
 
 	s := newServerWithHandler(t, &handler)
@@ -176,7 +176,7 @@ func TestShipClient_ReadFromAbnormalClosedSocket(t *testing.T) {
 	assert.Equal(t, shErr.Type, ErrSockClosed)
 }
 
-func TestShipClient_ReadBlockMessages(t *testing.T) {
+func TestClient_ReadBlockMessages(t *testing.T) {
 	called := false
 
 	expected := ship.GetBlocksResultV0{
@@ -238,7 +238,7 @@ func TestShipClient_ReadBlockMessages(t *testing.T) {
 	assert.Assert(t, called, "Block callback never called")
 }
 
-func TestShipClient_ReadTraceMessages(t *testing.T) {
+func TestClient_ReadTraceMessages(t *testing.T) {
 	called := false
 
 	// First trace 71f9afc519eab1bcf599bded5848f3167c1603238f4eb0f7998565b559b0b988
