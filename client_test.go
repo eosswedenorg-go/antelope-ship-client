@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
@@ -106,22 +107,26 @@ func TestClient_ConstructWithOptions(t *testing.T) {
 	client := NewClient(WithStartBlock(1234),
 		WithEndBlock(5000),
 		WithIrreversibleOnly(true),
-		WithMaxMessagesInFlight(20))
+		WithMaxMessagesInFlight(20),
+		WithConnectTimeout(time.Second*15))
 
 	assert.Equal(t, client.StartBlock, uint32(1234))
 	assert.Equal(t, client.EndBlock, uint32(5000))
 	assert.Equal(t, client.IrreversibleOnly, true)
 	assert.Equal(t, client.MaxMessagesInFlight, uint32(20))
+	assert.Equal(t, client.ConnectTimeout, time.Second*15)
 }
 
 func TestClient_ConstructWithCustomOption(t *testing.T) {
 	client := NewClient(func(c *Client) {
 		c.StartBlock = 4000
 		c.EndBlock = 5000
+		c.ConnectTimeout = time.Minute
 	})
 
 	assert.Equal(t, client.StartBlock, uint32(4000))
 	assert.Equal(t, client.EndBlock, uint32(5000))
+	assert.Equal(t, client.ConnectTimeout, time.Minute)
 }
 
 func TestClient_ConnectOK(t *testing.T) {
@@ -136,6 +141,12 @@ func TestClient_ConnectFail(t *testing.T) {
 	client := NewClient()
 	err := client.Connect(":9999")
 	assert.Error(t, err, "dial tcp :9999: connect: connection refused")
+}
+
+func TestClient_ConnectTimeout(t *testing.T) {
+	client := NewClient(WithConnectTimeout(time.Millisecond * 10))
+	err := client.Connect("99.99.99.99:9999")
+	assert.Error(t, err, "dial tcp 99.99.99.99:9999: i/o timeout")
 }
 
 func TestClient_ReadFromNormalClosedSocket(t *testing.T) {

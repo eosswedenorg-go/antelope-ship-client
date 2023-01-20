@@ -32,7 +32,9 @@ package antelope_ship_client
 
 import (
 	"bytes"
+	"context"
 	"net/url"
+	"time"
 
 	eos "github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ship"
@@ -52,6 +54,9 @@ type (
 type Client struct {
 	// Socket connection
 	sock *ws.Conn
+
+	// Specifies the duration for the connection to be established before the client bails out.
+	ConnectTimeout time.Duration
 
 	// Counter for how many non-ACKed messages we have received.
 	unconfirmed uint32
@@ -81,6 +86,7 @@ type Option func(*Client)
 // Create a new client
 func NewClient(options ...Option) *Client {
 	c := &Client{
+		ConnectTimeout:      time.Second * 30,
 		EndBlock:            NULL_BLOCK_NUMBER,
 		MaxMessagesInFlight: 10,
 	}
@@ -89,6 +95,13 @@ func NewClient(options ...Option) *Client {
 		opt(c)
 	}
 	return c
+}
+
+// Option to set Client.ConnectTimeout
+func WithConnectTimeout(value time.Duration) Option {
+	return func(c *Client) {
+		c.ConnectTimeout = value
+	}
 }
 
 // Option to set Client.StartBlock
@@ -169,7 +182,16 @@ func (c *Client) Connect(host string) error {
 //
 // Returns an error if the connection fails, nil otherwise.
 func (c *Client) ConnectURL(url url.URL) error {
-	sock, _, err := ws.DefaultDialer.Dial(url.String(), nil)
+	ctx, cancel := context.WithTimeout(context.Background(), c.ConnectTimeout)
+	defer cancel()
+
+	// ws package does context timeout if HandshakeTimeout is set.
+	// as we provide our own context with timeout. we can skip this.
+	dailer := ws.Dialer{
+		HandshakeTimeout: 0,
+	}
+
+	sock, _, err := dailer.DialContext(ctx, url.String(), nil)
 	if err != nil {
 		return err
 	}
