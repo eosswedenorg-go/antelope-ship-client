@@ -283,7 +283,7 @@ func (c *Client) Read() error {
 			}
 
 			if block.ThisBlock.BlockNum+1 >= c.EndBlock {
-				return c.SendCloseMessage()
+				return c.Shutdown()
 			}
 
 			break
@@ -340,9 +340,8 @@ func (c *Client) SendACK() error {
 	return nil
 }
 
-// Sends a close message to the server
-// indicating that the client wants to terminate the connection.
-func (c *Client) SendCloseMessage() error {
+// Shutdown closes the connection gracefully by sending a Close handshake.
+func (c *Client) Shutdown() error {
 	if !c.IsOpen() {
 		return ShipClientError{ErrNotConnected, "Socket not connected"}
 	}
@@ -364,7 +363,7 @@ func (c *Client) IsOpen() bool {
 // Close the socket on the client side.
 //
 // NOTE: This method closes the underlying network connection without
-// sending or waiting for a close message.
+// sending or close message.
 func (c *Client) Close() error {
 	if !c.IsOpen() {
 		return ShipClientError{ErrNotConnected, "Socket not connected"}

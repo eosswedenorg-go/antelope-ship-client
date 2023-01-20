@@ -140,7 +140,7 @@ func Example_basic() {
 
 			// Cleanly close the connection by sending a close message and then
 			// waiting (with timeout) for the server to close the connection.
-			err := client.SendCloseMessage()
+			err := client.Shutdown()
 			if err != nil {
 				log.Println("Failed to send close message", err)
 			}
