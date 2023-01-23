@@ -166,13 +166,22 @@ func WithCloseHandler(value CloseFn) Option {
 	}
 }
 
-// Connect the client to a ship node
+// Connect connects to a ship node.
 // Url must be of the form schema://host[:port]
 // and schema should be "ws" or "wss"
-//
-// Returns an error if the connection fails, nil otherwise.
+
+// Connect uses context.Background internally; to specify the context, use ConnectContext.
 func (c *Client) Connect(url string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), c.ConnectTimeout)
+	return c.ConnectContext(context.Background(), url)
+}
+
+// ConnectContext connects to a ship node using the provided context
+//
+// The provided Context must be non-nil.
+// If the context expires or is canceled before the connection is complete, an error is returned.
+func (c *Client) ConnectContext(ctx context.Context, url string) error {
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, c.ConnectTimeout)
 	defer cancel()
 
 	// ws package does context timeout if HandshakeTimeout is set.

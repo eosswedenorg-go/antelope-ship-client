@@ -1,6 +1,7 @@
 package antelope_ship_client
 
 import (
+	"context"
 	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
@@ -147,6 +148,22 @@ func TestClient_ConnectTimeout(t *testing.T) {
 	client := NewClient(WithConnectTimeout(time.Millisecond * 10))
 	err := client.Connect("ws://99.99.99.99:9999")
 	assert.Error(t, err, "dial tcp 99.99.99.99:9999: i/o timeout")
+}
+
+func TestClient_ConnectContextCancel(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	client := NewClient(WithConnectTimeout(time.Minute))
+	defer cancel()
+
+	go func() {
+		time.Sleep(time.Millisecond * 500)
+		cancel()
+	}()
+
+	err := client.ConnectContext(ctx, "ws://99.99.99.99:9999")
+
+	assert.ErrorIs(t, ctx.Err(), context.Canceled)
+	assert.Error(t, err, "dial tcp 99.99.99.99:9999: operation was canceled")
 }
 
 func TestClient_ReadFromNormalClosedSocket(t *testing.T) {
