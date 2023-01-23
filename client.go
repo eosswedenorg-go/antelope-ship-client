@@ -33,7 +33,6 @@ package antelope_ship_client
 import (
 	"bytes"
 	"context"
-	"net/url"
 	"time"
 
 	eos "github.com/eoscanada/eos-go"
@@ -168,20 +167,11 @@ func WithCloseHandler(value CloseFn) Option {
 }
 
 // Connect the client to a ship node
+// Url must be of the form schema://host[:port]
+// and schema should be "ws" or "wss"
 //
 // Returns an error if the connection fails, nil otherwise.
-//
-// NOTE: this is equivalent to calling
-//
-//	c.ConnectURL(url.URL{Scheme: "ws", Host: host, Path: "/"})
-func (c *Client) Connect(host string) error {
-	return c.ConnectURL(url.URL{Scheme: "ws", Host: host, Path: "/"})
-}
-
-// Connect the client to a ship node
-//
-// Returns an error if the connection fails, nil otherwise.
-func (c *Client) ConnectURL(url url.URL) error {
+func (c *Client) Connect(url string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.ConnectTimeout)
 	defer cancel()
 
@@ -191,7 +181,7 @@ func (c *Client) ConnectURL(url url.URL) error {
 		HandshakeTimeout: 0,
 	}
 
-	sock, _, err := dailer.DialContext(ctx, url.String(), nil)
+	sock, _, err := dailer.DialContext(ctx, url, nil)
 	if err != nil {
 		return err
 	}

@@ -134,18 +134,18 @@ func TestClient_ConnectOK(t *testing.T) {
 	defer s.Close()
 
 	client := NewClient()
-	assert.NilError(t, client.ConnectURL(*s.URL))
+	assert.NilError(t, client.Connect(s.URL.String()))
 }
 
 func TestClient_ConnectFail(t *testing.T) {
 	client := NewClient()
-	err := client.Connect(":9999")
+	err := client.Connect("ws://:9999")
 	assert.Error(t, err, "dial tcp :9999: connect: connection refused")
 }
 
 func TestClient_ConnectTimeout(t *testing.T) {
 	client := NewClient(WithConnectTimeout(time.Millisecond * 10))
-	err := client.Connect("99.99.99.99:9999")
+	err := client.Connect("ws://99.99.99.99:9999")
 	assert.Error(t, err, "dial tcp 99.99.99.99:9999: i/o timeout")
 }
 
@@ -156,7 +156,7 @@ func TestClient_ReadFromNormalClosedSocket(t *testing.T) {
 	defer s.Close()
 
 	client := NewClient(WithStartBlock(23617231))
-	err := client.ConnectURL(*s.URL)
+	err := client.Connect(s.URL.String())
 	assert.NilError(t, err)
 	err = client.Shutdown()
 	assert.NilError(t, err)
@@ -175,7 +175,7 @@ func TestClient_ReadFromAbnormalClosedSocket(t *testing.T) {
 	defer s.Close()
 
 	client := NewClient(WithStartBlock(72367186))
-	err := client.ConnectURL(*s.URL)
+	err := client.Connect(s.URL.String())
 	assert.NilError(t, err)
 	err = client.Shutdown()
 	assert.NilError(t, err)
@@ -236,7 +236,7 @@ func TestClient_ReadBlockMessages(t *testing.T) {
 	s := newServerWithHandler(t, &handler)
 	defer s.Close()
 
-	err := client.ConnectURL(*s.URL)
+	err := client.Connect(s.URL.String())
 	assert.NilError(t, err)
 	err = client.SendBlocksRequest()
 	assert.NilError(t, err)
@@ -427,7 +427,7 @@ func TestClient_ReadTraceMessages(t *testing.T) {
 	s := newServerWithHandler(t, &handler)
 	defer s.Close()
 
-	err = client.ConnectURL(*s.URL)
+	err = client.Connect(s.URL.String())
 	assert.NilError(t, err)
 	err = client.SendBlocksRequest()
 	assert.NilError(t, err)

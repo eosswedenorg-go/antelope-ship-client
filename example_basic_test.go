@@ -17,7 +17,7 @@ import (
 // -----------------------------
 
 // IP and port to the ship node.
-var shipHost string = "127.0.0.1:8089"
+var shipHost string = "ws://127.0.0.1:8089"
 
 // Url to the antelope api on the same node as ship is running.
 // Use this to fetch a sane value for `startBlock`
