@@ -1,4 +1,4 @@
-package antelope_ship_client_test
+package main
 
 import (
 	"context"
@@ -57,7 +57,7 @@ func processStatus(status *ship.GetStatusResultV0) {
 	log.Println("ChainStateBeginBlock", status.ChainStateBeginBlock, "ChainStateEndBlock", status.ChainStateEndBlock)
 }
 
-func Example_basic() {
+func main() {
 	// Create done and interrupt channels.
 	done := make(chan bool)
 	interrupt := make(chan os.Signal, 1)
