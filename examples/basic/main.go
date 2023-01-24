@@ -71,8 +71,7 @@ func main() {
 		if err == nil {
 			startBlock = chainInfo.HeadBlockNum
 		} else {
-			log.Println("Failed to get info:", err)
-			return
+			log.Fatalln("Failed to get info:", err)
 		}
 	}
 
@@ -91,23 +90,20 @@ func main() {
 	// Connect to SHIP client
 	err := client.Connect(shipHost)
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatalln(err)
 	}
 
 	// Request streaming of blocks from ship
 	err = client.SendBlocksRequest()
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatalln(err)
 	}
 
 	// Request status message from ship
 	if sendStatus {
 		err = client.SendStatusRequest()
 		if err != nil {
-			log.Println(err)
-			return
+			log.Fatalln(err)
 		}
 	}
 
