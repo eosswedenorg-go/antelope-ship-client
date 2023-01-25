@@ -345,7 +345,7 @@ func (c *Client) ReadRaw() (int, []byte, error) {
 	return msg_type, data, nil
 }
 
-// Sends an Acknowledgment message that tells th
+// Sends an Acknowledgment message that tells the
 // server that we have received X number of messages
 // where X is the number returned by c.UnconfirmedMessages().
 //
