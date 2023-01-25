@@ -36,5 +36,9 @@ func (e ShipClientError) Error() string {
 		t = "parse"
 	}
 
-	return fmt.Sprintf("shipclient - %s: %s", t, e.Text)
+	msg := fmt.Sprintf("shipclient - %s", t)
+	if len(e.Text) > 0 {
+		msg = msg + fmt.Sprintf(": %s", e.Text)
+	}
+	return msg
 }
