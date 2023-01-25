@@ -42,6 +42,8 @@ import (
 
 const NULL_BLOCK_NUMBER uint32 = 0xffffffff
 
+var errNotConnected = ClientError{ErrNotConnected, "Socket not connected"}
+
 type (
 	InitFn   func(*eos.ABI)
 	BlockFn  func(*ship.GetBlocksResultV0)
@@ -362,7 +364,7 @@ func (c *Client) SendACK() error {
 // Shutdown closes the connection gracefully by sending a Close handshake.
 func (c *Client) Shutdown() error {
 	if !c.IsOpen() {
-		return ClientError{ErrNotConnected, "Socket not connected"}
+		return errNotConnected
 	}
 
 	msg := ws.FormatCloseMessage(ws.CloseNormalClosure, "")
@@ -385,7 +387,7 @@ func (c *Client) IsOpen() bool {
 // sending or close message.
 func (c *Client) Close() error {
 	if !c.IsOpen() {
-		return ClientError{ErrNotConnected, "Socket not connected"}
+		return errNotConnected
 	}
 
 	c.sock.Close()
