@@ -309,9 +309,10 @@ func (c *Client) Read() error {
 			break
 		}
 
-		status, ok := msg.Impl.(*ship.GetStatusResultV0)
-		if ok && c.StatusHandler != nil {
-			c.StatusHandler(status)
+		if c.StatusHandler != nil {
+			if status, ok := msg.Impl.(*ship.GetStatusResultV0); ok {
+				c.StatusHandler(status)
+			}
 		}
 		break
 	}
