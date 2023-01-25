@@ -221,31 +221,28 @@ func (c *Client) blockRequest() *ship.GetBlocksRequestV0 {
 // Send a blocks request to the ship server.
 // This tells the server to start sending block message to the client.
 func (c *Client) SendBlocksRequest() error {
-	// Encode the request.
-	bytes, err := eos.MarshalBinary(ship.Request{
+	return c.send(ship.Request{
 		BaseVariant: eos.BaseVariant{
 			TypeID: ship.RequestVariant.TypeID("get_blocks_request_v0"),
 			Impl:   c.blockRequest(),
 		},
 	})
-	if err != nil {
-		return err
-	}
-
-	// Send the request.
-	return c.sock.WriteMessage(ws.BinaryMessage, bytes)
 }
 
 // Send a status request to the ship server.
 // This tells the server to start sending status message to the client.
 func (c *Client) SendStatusRequest() error {
-	// Encode the request.
-	bytes, err := eos.MarshalBinary(ship.Request{
+	return c.send(ship.Request{
 		BaseVariant: eos.BaseVariant{
 			TypeID: ship.RequestVariant.TypeID("get_status_request_v0"),
 			Impl:   &ship.GetStatusRequestV0{},
 		},
 	})
+}
+
+func (c *Client) send(req ship.Request) error {
+	// Encode the request.
+	bytes, err := eos.MarshalBinary(req)
 	if err != nil {
 		return err
 	}
