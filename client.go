@@ -191,12 +191,10 @@ func (c *Client) ConnectContext(ctx context.Context, url string) error {
 	}
 
 	sock, _, err := dailer.DialContext(ctx, url, nil)
-	if err != nil {
-		return err
+	if err == nil {
+		c.sock = sock
 	}
-
-	c.sock = sock
-	return nil
+	return err
 }
 
 // Returns the number of messages the client has received
