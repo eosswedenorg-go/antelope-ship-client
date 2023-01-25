@@ -29,8 +29,9 @@ type testHandler struct {
 
 	CloseError bool
 
-	ExpectedBlockRequest *ship.GetBlocksRequestV0
-	RespondBlocks        []ship.GetBlocksResultV0
+	ExpectedBlockRequest  *ship.GetBlocksRequestV0
+	ExpectedStatusRequest *ship.GetStatusRequestV0
+	RespondBlocks         []ship.GetBlocksResultV0
 }
 
 type testServer struct {
@@ -82,15 +83,18 @@ func (h testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			assert.NilError(h.t, err)
 
 			block_req, ok := req.Impl.(*ship.GetBlocksRequestV0)
-			if ok {
-				if h.ExpectedBlockRequest != nil {
-					assert.DeepEqual(h.t, *h.ExpectedBlockRequest, *block_req)
-				}
+			if ok && h.ExpectedBlockRequest != nil {
+				assert.DeepEqual(h.t, *h.ExpectedBlockRequest, *block_req)
+			}
 
-				for _, bytes := range h.responses {
-					err = wsock.WriteMessage(ws.BinaryMessage, bytes)
-					assert.NilError(h.t, err)
-				}
+			status_req, ok := req.Impl.(*ship.GetStatusRequestV0)
+			if ok && h.ExpectedStatusRequest != nil {
+				assert.DeepEqual(h.t, *h.ExpectedStatusRequest, *status_req)
+			}
+
+			for _, bytes := range h.responses {
+				err = wsock.WriteMessage(ws.BinaryMessage, bytes)
+				assert.NilError(h.t, err)
 			}
 		}
 	}
@@ -202,6 +206,61 @@ func TestClient_ReadFromAbnormalClosedSocket(t *testing.T) {
 	shErr, ok := err.(ClientError)
 	assert.Equal(t, true, ok, "Failed to cast error to ClientError")
 	assert.Equal(t, shErr.Type, ErrSockClosed)
+}
+
+func TestClient_StatusMessage(t *testing.T) {
+	called := false
+
+	expected := ship.GetStatusResultV0{
+		Head: &ship.BlockPosition{
+			BlockNum: 5000,
+			BlockID:  eos.Checksum256{0x0b, 0x10, 0x07, 0xfb, 0x2b, 0x23, 0x3b, 0x6b, 0xa8, 0x5f, 0x4e, 0xbe, 0x64, 0xc4, 0x9e, 0x0f, 0x23, 0xf3, 0xcc, 0x94, 0xcf, 0x9a, 0x9f, 0xcc, 0xa7, 0xbb, 0x63, 0x7a, 0xc8, 0x52, 0x84, 0x07},
+		},
+		LastIrreversible: &ship.BlockPosition{
+			BlockNum: 6000,
+			BlockID:  eos.Checksum256{0x40, 0xa9, 0x62, 0x70, 0xc9, 0x8b, 0x64, 0x11, 0x7a, 0xbe, 0xc0, 0x0a, 0x41, 0x11, 0x78, 0x10, 0x7c, 0xcd, 0x91, 0x8c, 0x19, 0xfb, 0x76, 0x32, 0xb6, 0x8f, 0x9b, 0xb5, 0xeb, 0xdf, 0xa9, 0xe6},
+		},
+		TraceBeginBlock:      500,
+		TraceEndBlock:        600,
+		ChainStateBeginBlock: 400,
+		ChainStateEndBlock:   500,
+	}
+
+	status_handler := func(r *ship.GetStatusResultV0) {
+		called = true
+		assert.DeepEqual(t, expected, *r)
+	}
+	client := NewClient(WithStartBlock(1234), WithStatusHandler(status_handler))
+
+	handler := testHandler{
+		t:                     t,
+		ExpectedStatusRequest: &ship.GetStatusRequestV0{},
+		responses: [][]byte{
+			{
+				0x00, 0x88, 0x13, 0x00, 0x00, 0x0b, 0x10, 0x07, 0xfb, 0x2b, 0x23, 0x3b, 0x6b, 0xa8, 0x5f, 0x4e,
+				0xbe, 0x64, 0xc4, 0x9e, 0x0f, 0x23, 0xf3, 0xcc, 0x94, 0xcf, 0x9a, 0x9f, 0xcc, 0xa7, 0xbb, 0x63,
+				0x7a, 0xc8, 0x52, 0x84, 0x07, 0x70, 0x17, 0x00, 0x00, 0x40, 0xa9, 0x62, 0x70, 0xc9, 0x8b, 0x64,
+				0x11, 0x7a, 0xbe, 0xc0, 0x0a, 0x41, 0x11, 0x78, 0x10, 0x7c, 0xcd, 0x91, 0x8c, 0x19, 0xfb, 0x76,
+				0x32, 0xb6, 0x8f, 0x9b, 0xb5, 0xeb, 0xdf, 0xa9, 0xe6, 0xf4, 0x01, 0x00, 0x00, 0x58, 0x02, 0x00,
+				0x00, 0x90, 0x01, 0x00, 0x00, 0xf4, 0x01, 0x00, 0x00,
+			},
+		},
+	}
+
+	s := newServerWithHandler(t, &handler)
+	defer s.Close()
+
+	err := client.Connect(s.URL.String())
+	assert.NilError(t, err)
+	err = client.SendStatusRequest()
+	assert.NilError(t, err)
+
+	err = client.Read()
+	assert.NilError(t, err)
+
+	client.Close()
+
+	assert.Assert(t, called, "Status callback never called")
 }
 
 func TestClient_ReadBlockMessages(t *testing.T) {
