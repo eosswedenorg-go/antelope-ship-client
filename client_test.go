@@ -243,7 +243,7 @@ func TestClient_ReadIsUnblockedOnClose(t *testing.T) {
 
 	go func() {
 		err := client.Read()
-		assert.Error(t, err, "shipclient - socket closed: use of closed network connection")
+		assert.Error(t, err, "shipclient - socket closed: use of closed connection")
 		shErr, ok := err.(ClientError)
 		assert.Equal(t, true, ok, "Failed to cast error to ClientError")
 		assert.Equal(t, shErr.Type, ErrSockClosed)
