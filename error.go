@@ -13,12 +13,12 @@ const (
 	ErrParse
 )
 
-type ShipClientError struct {
+type ClientError struct {
 	Type int
 	Text string
 }
 
-func (e ShipClientError) Error() string {
+func (e ClientError) Error() string {
 	var t string
 
 	switch e.Type {

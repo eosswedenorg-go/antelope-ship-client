@@ -114,7 +114,7 @@ func main() {
 			if err != nil {
 				log.Print(err)
 
-				if e, ok := err.(shipclient.ShipClientError); ok {
+				if e, ok := err.(shipclient.ClientError); ok {
 					if e.Type == shipclient.ErrSockRead {
 						break
 					}

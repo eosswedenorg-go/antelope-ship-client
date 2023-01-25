@@ -180,7 +180,7 @@ func TestClient_ReadFromNormalClosedSocket(t *testing.T) {
 	err = client.Read()
 	assert.Error(t, err, "shipclient - socket closed: websocket: close 1000 (normal)")
 
-	shErr, ok := err.(ShipClientError)
+	shErr, ok := err.(ClientError)
 	assert.Equal(t, true, ok, "Failed to cast error to ShipClientError")
 	assert.Equal(t, shErr.Type, ErrSockClosed)
 }
@@ -199,8 +199,8 @@ func TestClient_ReadFromAbnormalClosedSocket(t *testing.T) {
 	err = client.Read()
 	assert.Error(t, err, "shipclient - socket closed: websocket: close 1006 (abnormal closure): unexpected EOF")
 
-	shErr, ok := err.(ShipClientError)
-	assert.Equal(t, true, ok, "Failed to cast error to ShipClientError")
+	shErr, ok := err.(ClientError)
+	assert.Equal(t, true, ok, "Failed to cast error to ClientError")
 	assert.Equal(t, shErr.Type, ErrSockClosed)
 }
 

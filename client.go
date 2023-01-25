@@ -268,7 +268,7 @@ func (c *Client) Read() error {
 			if c.InitHandler != nil {
 				abi, err := eos.NewABI(bytes.NewReader(data))
 				if err != nil {
-					return ShipClientError{ErrParse, "Failed to decode ABI"}
+					return ClientError{ErrParse, "Failed to decode ABI"}
 				}
 
 				c.InitHandler(abi)
@@ -277,12 +277,12 @@ func (c *Client) Read() error {
 		}
 
 		if msg_type != ws.BinaryMessage {
-			return ShipClientError{ErrParse, "Can only decode binary messages"}
+			return ClientError{ErrParse, "Can only decode binary messages"}
 		}
 
 		// Unpack the message
 		if err = eos.UnmarshalBinary(data, &msg); err != nil {
-			return ShipClientError{ErrParse, err.Error()}
+			return ClientError{ErrParse, err.Error()}
 		}
 
 		// Parse message and route to correct callback.
@@ -328,7 +328,7 @@ func (c *Client) ReadRaw() (int, []byte, error) {
 			errType = ErrSockClosed
 		}
 
-		return msg_type, data, ShipClientError{errType, err.Error()}
+		return msg_type, data, ClientError{errType, err.Error()}
 	}
 
 	// Check if we need to ack messages
@@ -354,7 +354,7 @@ func (c *Client) SendACK() error {
 	err := c.sock.WriteMessage(ws.BinaryMessage, req)
 	c.unconfirmed = 0
 	if err != nil {
-		return ShipClientError{ErrACK, err.Error()}
+		return ClientError{ErrACK, err.Error()}
 	}
 	return nil
 }
@@ -362,13 +362,13 @@ func (c *Client) SendACK() error {
 // Shutdown closes the connection gracefully by sending a Close handshake.
 func (c *Client) Shutdown() error {
 	if !c.IsOpen() {
-		return ShipClientError{ErrNotConnected, "Socket not connected"}
+		return ClientError{ErrNotConnected, "Socket not connected"}
 	}
 
 	msg := ws.FormatCloseMessage(ws.CloseNormalClosure, "")
 	err := c.sock.WriteMessage(ws.CloseMessage, msg)
 	if err != nil {
-		return ShipClientError{ErrSendClose, err.Error()}
+		return ClientError{ErrSendClose, err.Error()}
 	}
 
 	return nil
@@ -385,7 +385,7 @@ func (c *Client) IsOpen() bool {
 // sending or close message.
 func (c *Client) Close() error {
 	if !c.IsOpen() {
-		return ShipClientError{ErrNotConnected, "Socket not connected"}
+		return ClientError{ErrNotConnected, "Socket not connected"}
 	}
 
 	c.sock.Close()
