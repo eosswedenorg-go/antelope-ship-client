@@ -208,6 +208,52 @@ func TestClient_ReadFromAbnormalClosedSocket(t *testing.T) {
 	assert.Equal(t, shErr.Type, ErrSockClosed)
 }
 
+func TestClient_ReadIsUnblockedOnShutdown(t *testing.T) {
+	handler := testHandler{t: t}
+
+	s := newServerWithHandler(t, &handler)
+	defer s.Close()
+
+	client := NewClient(WithStartBlock(53482321))
+	err := client.Connect(s.URL.String())
+	assert.NilError(t, err)
+
+	go func() {
+		err := client.Read()
+		assert.Error(t, err, "shipclient - socket closed: websocket: close 1000 (normal)")
+		shErr, ok := err.(ClientError)
+		assert.Equal(t, true, ok, "Failed to cast error to ClientError")
+		assert.Equal(t, shErr.Type, ErrSockClosed)
+	}()
+
+	time.Sleep(time.Millisecond * 500)
+	err = client.Shutdown()
+	assert.NilError(t, err)
+}
+
+func TestClient_ReadIsUnblockedOnClose(t *testing.T) {
+	handler := testHandler{t: t}
+
+	s := newServerWithHandler(t, &handler)
+	defer s.Close()
+
+	client := NewClient(WithStartBlock(53482321))
+	err := client.Connect(s.URL.String())
+	assert.NilError(t, err)
+
+	go func() {
+		err := client.Read()
+		assert.Error(t, err, "shipclient - socket closed: use of closed network connection")
+		shErr, ok := err.(ClientError)
+		assert.Equal(t, true, ok, "Failed to cast error to ClientError")
+		assert.Equal(t, shErr.Type, ErrSockClosed)
+	}()
+
+	time.Sleep(time.Millisecond * 500)
+	err = client.Close()
+	assert.NilError(t, err)
+}
+
 func TestClient_StatusMessage(t *testing.T) {
 	called := false
 
