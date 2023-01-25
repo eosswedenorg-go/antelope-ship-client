@@ -326,7 +326,7 @@ func (c *Client) ReadRaw() (int, []byte, error) {
 	if err != nil {
 
 		errType := ErrSockRead
-		if _, ok := err.(*ws.CloseError); ok {
+		if ws.IsUnexpectedCloseError(err) {
 			errType = ErrSockClosed
 		}
 
