@@ -287,8 +287,7 @@ func (c *Client) Read() error {
 		}
 
 		// Parse message and route to correct callback.
-		block, ok := msg.Impl.(*ship.GetBlocksResultV0)
-		if ok {
+		if block, ok := msg.Impl.(*ship.GetBlocksResultV0); ok {
 
 			if block.ThisBlock == nil && block.Head != nil {
 				continue
