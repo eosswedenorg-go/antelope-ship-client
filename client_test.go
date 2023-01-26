@@ -209,6 +209,7 @@ func TestClient_ReadFromAbnormalClosedSocket(t *testing.T) {
 }
 
 func TestClient_ReadIsUnblockedOnShutdown(t *testing.T) {
+	done := make(chan interface{})
 	handler := testHandler{t: t}
 
 	s := newServerWithHandler(t, &handler)
@@ -219,6 +220,7 @@ func TestClient_ReadIsUnblockedOnShutdown(t *testing.T) {
 	assert.NilError(t, err)
 
 	go func() {
+		defer close(done)
 		err := client.Read()
 		assert.Error(t, err, "shipclient - socket closed: websocket: close 1000 (normal)")
 		shErr, ok := err.(ClientError)
@@ -229,9 +231,12 @@ func TestClient_ReadIsUnblockedOnShutdown(t *testing.T) {
 	time.Sleep(time.Millisecond * 500)
 	err = client.Shutdown()
 	assert.NilError(t, err)
+
+	<-done
 }
 
 func TestClient_ReadIsUnblockedOnClose(t *testing.T) {
+	done := make(chan interface{})
 	handler := testHandler{t: t}
 
 	s := newServerWithHandler(t, &handler)
@@ -242,6 +247,7 @@ func TestClient_ReadIsUnblockedOnClose(t *testing.T) {
 	assert.NilError(t, err)
 
 	go func() {
+		defer close(done)
 		err := client.Read()
 		assert.Error(t, err, "shipclient - socket closed: use of closed connection")
 		shErr, ok := err.(ClientError)
@@ -252,6 +258,8 @@ func TestClient_ReadIsUnblockedOnClose(t *testing.T) {
 	time.Sleep(time.Millisecond * 500)
 	err = client.Close()
 	assert.NilError(t, err)
+
+	<-done
 }
 
 func TestClient_StatusMessage(t *testing.T) {
