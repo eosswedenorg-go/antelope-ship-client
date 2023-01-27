@@ -302,7 +302,10 @@ func (c *Client) Read() error {
 			}
 
 			if block.ThisBlock.BlockNum+1 >= c.EndBlock {
-				return c.Shutdown()
+				// Send Close message, ignore errors here as we
+				// should resume reading from the socket.
+				_ = c.sendClose(ws.CloseNormalClosure, "end block reached")
+				continue
 			}
 
 			break
