@@ -363,15 +363,19 @@ func (c *Client) SendACK() error {
 	return nil
 }
 
+// Send a close message to the server.
+func (c *Client) sendClose(code int, reason string) error {
+	msg := ws.FormatCloseMessage(code, reason)
+	return c.sock.WriteMessage(ws.CloseMessage, msg)
+}
+
 // Shutdown closes the connection gracefully by sending a Close handshake.
 func (c *Client) Shutdown() error {
 	if !c.IsOpen() {
 		return errNotConnected
 	}
 
-	msg := ws.FormatCloseMessage(ws.CloseNormalClosure, "")
-	err := c.sock.WriteMessage(ws.CloseMessage, msg)
-	if err != nil {
+	if err := c.sendClose(ws.CloseNormalClosure, ""); err != nil {
 		return ClientError{ErrSendClose, err.Error()}
 	}
 
