@@ -326,6 +326,10 @@ func (c *Client) Read() error {
 }
 
 func (c *Client) ReadRaw() (int, []byte, error) {
+	if !c.IsOpen() {
+		return -1, nil, errNotConnected
+	}
+
 	// Read message from socket.
 	msg_type, data, err := c.sock.ReadMessage()
 	if err != nil {
