@@ -243,6 +243,9 @@ func (c *Client) SendStatusRequest() error {
 }
 
 func (c *Client) send(req ship.Request) error {
+	if !c.IsOpen() {
+		return errNotConnected
+	}
 	// Encode the request.
 	bytes, err := eos.MarshalBinary(req)
 	if err != nil {
