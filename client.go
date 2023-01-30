@@ -58,11 +58,11 @@ type Client struct {
 	// Socket connection
 	sock *ws.Conn
 
-	// Specifies the duration for the connection to be established before the client bails out.
-	ConnectTimeout time.Duration
-
 	// Counter for how many non-ACKed messages we have received.
 	unconfirmed uint32
+
+	// Specifies the duration for the connection to be established before the client bails out.
+	ConnectTimeout time.Duration
 
 	// Block to start receiving notifications on.
 	StartBlock uint32
