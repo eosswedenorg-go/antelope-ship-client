@@ -350,7 +350,16 @@ func (c *Client) ReadRaw() (int, []byte, error) {
 	// Read message from socket.
 	msg_type, data, err := c.sock.ReadMessage()
 	if err != nil {
-		return msg_type, data, newClientError(err, ErrSockRead)
+
+		// Any type of error should be considered permanent.
+		// therefore we can close the socket here
+		if close_err := c.Close(); close_err != nil && close_err != errNotConnected {
+			err = close_err
+		} else {
+			err = newClientError(err, ErrSockRead)
+		}
+
+		return msg_type, data, err
 	}
 
 	// Check if we need to ack messages
