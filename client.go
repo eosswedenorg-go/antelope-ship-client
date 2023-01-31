@@ -33,8 +33,6 @@ package antelope_ship_client
 import (
 	"bytes"
 	"context"
-	"errors"
-	"net"
 	"time"
 
 	eos "github.com/eoscanada/eos-go"
@@ -333,16 +331,7 @@ func (c *Client) ReadRaw() (int, []byte, error) {
 	// Read message from socket.
 	msg_type, data, err := c.sock.ReadMessage()
 	if err != nil {
-
-		errType := ErrSockRead
-		if errors.Is(err, net.ErrClosed) {
-			errType = ErrSockClosed
-			err = errors.New("use of closed connection")
-		} else if ws.IsUnexpectedCloseError(err) {
-			errType = ErrSockClosed
-		}
-
-		return msg_type, data, ClientError{errType, err.Error()}
+		return msg_type, data, newClientError(err, ErrSockRead)
 	}
 
 	// Check if we need to ack messages
