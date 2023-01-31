@@ -179,8 +179,10 @@ func TestClient_ReadFromNormalClosedSocket(t *testing.T) {
 	client := NewClient(WithStartBlock(23617231))
 	err := client.Connect(s.URL.String())
 	assert.NilError(t, err)
-	err = client.Shutdown()
+
+	err = client.sendClose(ws.CloseNormalClosure, "")
 	assert.NilError(t, err)
+
 	err = client.Read()
 	assert.Error(t, err, "shipclient - socket closed: websocket: close 1000 (normal)")
 
