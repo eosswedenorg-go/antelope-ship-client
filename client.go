@@ -33,6 +33,7 @@ package antelope_ship_client
 import (
 	"bytes"
 	"context"
+	"sync"
 	"time"
 
 	eos "github.com/eoscanada/eos-go"
@@ -58,6 +59,12 @@ type Client struct {
 
 	// Counter for how many non-ACKed messages we have received.
 	unconfirmed uint32
+
+	// Channel to be used to signal that the websocket was closed correctly.
+	close chan interface{}
+
+	// Mutex to only allow one thread to close the connection (and close channel)
+	close_mtx sync.Mutex
 
 	// Specifies the duration for the connection to be established before the client bails out.
 	ConnectTimeout time.Duration
@@ -206,6 +213,7 @@ func (c *Client) ConnectContext(ctx context.Context, url string) error {
 	sock, _, err := dailer.DialContext(ctx, url, nil)
 	if err == nil {
 		c.sock = sock
+		c.close = make(chan interface{})
 	}
 	return err
 }
@@ -380,6 +388,7 @@ func (c *Client) sendClose(code int, reason string) error {
 }
 
 // Shutdown closes the connection gracefully by sending a Close handshake.
+// This function will block until a close message is received from the server an error occure or timeout is exceeded.
 func (c *Client) Shutdown() error {
 	if !c.IsOpen() {
 		return errNotConnected
@@ -389,7 +398,13 @@ func (c *Client) Shutdown() error {
 		return ClientError{ErrSendClose, err.Error()}
 	}
 
-	return nil
+	// Wait for connection to fully close.
+	select {
+	case <-c.close:
+		return nil
+	case <-time.After(c.ShutdownTimeout):
+		return ClientError{ErrSockClosed, "timeout"}
+	}
 }
 
 // Returns true if the websocket connection is open. false otherwise.
@@ -402,12 +417,19 @@ func (c *Client) IsOpen() bool {
 // NOTE: This method closes the underlying network connection without
 // sending or close message.
 func (c *Client) Close() error {
+	// Obtain mutex lock before checking c.IsOpen()
+	// so other threads bails out once they unblocks.
+	c.close_mtx.Lock()
+	defer c.close_mtx.Unlock()
+
 	if !c.IsOpen() {
 		return errNotConnected
 	}
 
 	err := c.sock.Close()
 	c.sock = nil
+
+	close(c.close)
 
 	if c.CloseHandler != nil {
 		c.CloseHandler()
