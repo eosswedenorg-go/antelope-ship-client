@@ -62,6 +62,9 @@ type Client struct {
 	// Specifies the duration for the connection to be established before the client bails out.
 	ConnectTimeout time.Duration
 
+	// Specifies the duration for Shutdown() to wait before forcefully disconnecting the socket.
+	ShutdownTimeout time.Duration
+
 	// Block to start receiving notifications on.
 	StartBlock uint32
 
@@ -88,6 +91,7 @@ type Option func(*Client)
 func NewClient(options ...Option) *Client {
 	c := &Client{
 		ConnectTimeout:      time.Second * 30,
+		ShutdownTimeout:     time.Second * 4,
 		EndBlock:            NULL_BLOCK_NUMBER,
 		MaxMessagesInFlight: 10,
 	}
@@ -102,6 +106,13 @@ func NewClient(options ...Option) *Client {
 func WithConnectTimeout(value time.Duration) Option {
 	return func(c *Client) {
 		c.ConnectTimeout = value
+	}
+}
+
+// Option to set Client.ShutdownTimeout
+func WithShutdownTimeout(value time.Duration) Option {
+	return func(c *Client) {
+		c.ShutdownTimeout = value
 	}
 }
 
