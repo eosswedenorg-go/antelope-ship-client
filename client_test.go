@@ -198,10 +198,10 @@ func TestClient_ReadFromAbnormalClosedSocket(t *testing.T) {
 	defer s.Close()
 
 	client := NewClient(WithStartBlock(72367186))
+
 	err := client.Connect(s.URL.String())
 	assert.NilError(t, err)
-	err = client.Shutdown()
-	assert.NilError(t, err)
+
 	err = client.Read()
 	assert.Error(t, err, "shipclient - socket closed: websocket: close 1006 (abnormal closure): unexpected EOF")
 
