@@ -406,12 +406,15 @@ func (c *Client) Close() error {
 		return errNotConnected
 	}
 
-	c.sock.Close()
+	err := c.sock.Close()
 	c.sock = nil
 
 	if c.CloseHandler != nil {
 		c.CloseHandler()
 	}
 
+	if err != nil {
+		return newClientError(err, ErrSockClosed)
+	}
 	return nil
 }
