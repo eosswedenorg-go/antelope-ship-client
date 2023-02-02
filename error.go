@@ -9,11 +9,22 @@ import (
 )
 
 const (
+	// Not connected to websocket.
 	ErrNotConnected = iota
+
+	// Failed to read from websocket
 	ErrSockRead
+
+	// Failed to send/read from websocket because it's closed.
 	ErrSockClosed
+
+	// Failed to send close message
 	ErrSendClose
+
+	// Failed to send Ack message
 	ErrACK
+
+	// Failed to parse message
 	ErrParse
 )
 
