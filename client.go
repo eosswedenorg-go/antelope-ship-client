@@ -429,9 +429,8 @@ func (c *Client) Close() error {
 	// Obtain mutex lock before checking c.IsOpen()
 	// so other threads bails out once they unblocks.
 	c.close_mu.Lock()
-	defer c.close_mu.Unlock()
-
 	if !c.IsOpen() {
+		c.close_mu.Unlock()
 		return errNotConnected
 	}
 
@@ -439,6 +438,7 @@ func (c *Client) Close() error {
 	c.sock = nil
 
 	close(c.close)
+	c.close_mu.Unlock()
 
 	if c.CloseHandler != nil {
 		c.CloseHandler()
