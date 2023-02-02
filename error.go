@@ -46,7 +46,7 @@ func (e ClientError) Error() string {
 	case ErrSendClose:
 		t = "send close"
 	case ErrSendACK:
-		t = "ack send"
+		t = "send ack"
 	case ErrParse:
 		t = "parse"
 	}

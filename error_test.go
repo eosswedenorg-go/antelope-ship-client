@@ -45,7 +45,7 @@ func TestClientError_Error(t *testing.T) {
 		{"ErrSockRead EOF", ClientError{ErrSockRead, "EOF"}, "shipclient - socket read: EOF"},
 		{"ErrSockClosed", ClientError{ErrSockClosed, ""}, "shipclient - socket closed"},
 		{"ErrSendClose", ClientError{ErrSendClose, ""}, "shipclient - send close"},
-		{"ErrSendACK", ClientError{ErrSendACK, "some message"}, "shipclient - ack send: some message"},
+		{"ErrSendACK", ClientError{ErrSendACK, "some message"}, "shipclient - send ack: some message"},
 		{"ErrParse", ClientError{ErrParse, "invalid json"}, "shipclient - parse: invalid json"},
 	}
 	for _, tt := range tests {
