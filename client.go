@@ -64,7 +64,7 @@ type Client struct {
 	close chan interface{}
 
 	// Mutex to only allow one thread to close the connection (and close channel)
-	close_mtx sync.Mutex
+	close_mu sync.Mutex
 
 	// Specifies the duration for the connection to be established before the client bails out.
 	ConnectTimeout time.Duration
@@ -428,8 +428,8 @@ func (c *Client) IsOpen() bool {
 func (c *Client) Close() error {
 	// Obtain mutex lock before checking c.IsOpen()
 	// so other threads bails out once they unblocks.
-	c.close_mtx.Lock()
-	defer c.close_mtx.Unlock()
+	c.close_mu.Lock()
+	defer c.close_mu.Unlock()
 
 	if !c.IsOpen() {
 		return errNotConnected
