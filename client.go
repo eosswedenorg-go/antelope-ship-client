@@ -378,7 +378,7 @@ func (c *Client) Recv() (int, []byte, error) {
 // server that we have received X number of messages
 // where X is the number returned by c.UnconfirmedMessages().
 //
-// This is normally called internally by Read()
+// This is normally called internally by Recv()
 // So only use this manually if you know that you need to.
 func (c *Client) SendACK() error {
 	req := ship.NewGetBlocksAck(c.unconfirmed)
