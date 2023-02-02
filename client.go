@@ -385,7 +385,7 @@ func (c *Client) SendACK() error {
 	err := c.sock.WriteMessage(ws.BinaryMessage, req)
 	c.unconfirmed = 0
 	if err != nil {
-		return ClientError{ErrACK, err.Error()}
+		return ClientError{ErrSendACK, err.Error()}
 	}
 	return nil
 }

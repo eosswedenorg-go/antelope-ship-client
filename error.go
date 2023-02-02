@@ -22,7 +22,7 @@ const (
 	ErrSendClose
 
 	// Failed to send Ack message
-	ErrACK
+	ErrSendACK
 
 	// Failed to parse message
 	ErrParse
@@ -45,7 +45,7 @@ func (e ClientError) Error() string {
 		t = "socket read"
 	case ErrSendClose:
 		t = "send close"
-	case ErrACK:
+	case ErrSendACK:
 		t = "ack send"
 	case ErrParse:
 		t = "parse"

@@ -19,7 +19,7 @@ func Test_newClientError(t *testing.T) {
 		args args
 		want ClientError
 	}{
-		{"Generic", args{errors.New("some message"), ErrACK}, ClientError{Text: "some message", Type: ErrACK}},
+		{"Generic", args{errors.New("some message"), ErrSendACK}, ClientError{Text: "some message", Type: ErrSendACK}},
 		{"net.ErrClosed", args{net.ErrClosed, ErrSockRead}, ClientError{Text: "use of closed connection", Type: ErrSockClosed}},
 		{"net.ErrWriteToConnected", args{net.ErrWriteToConnected, ErrSockRead}, ClientError{Text: net.ErrWriteToConnected.Error(), Type: ErrSockRead}},
 		{"ws.CloseNormalClosure", args{&ws.CloseError{Code: ws.CloseNormalClosure}, ErrNotConnected}, ClientError{Text: "websocket: close 1000 (normal)", Type: ErrSockClosed}},
