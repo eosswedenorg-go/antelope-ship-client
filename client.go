@@ -280,7 +280,7 @@ func (c *Client) Read() error {
 	for {
 		var msg ship.Result
 
-		msg_type, data, err := c.ReadRaw()
+		msg_type, data, err := c.Recv()
 		if err != nil {
 			return err
 		}
@@ -342,7 +342,7 @@ func (c *Client) Read() error {
 	return nil
 }
 
-func (c *Client) ReadRaw() (int, []byte, error) {
+func (c *Client) Recv() (int, []byte, error) {
 	if !c.IsOpen() {
 		return -1, nil, errNotConnected
 	}
