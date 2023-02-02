@@ -33,3 +33,26 @@ func Test_newClientError(t *testing.T) {
 		})
 	}
 }
+
+func TestClientError_Error(t *testing.T) {
+	tests := []struct {
+		name string
+		err  ClientError
+		want string
+	}{
+		{"ErrNotConnected", ClientError{ErrNotConnected, ""}, "shipclient - not connected"},
+		{"ErrSockRead broken pipe", ClientError{ErrSockRead, "broken pipe"}, "shipclient - socket read: broken pipe"},
+		{"ErrSockRead EOF", ClientError{ErrSockRead, "EOF"}, "shipclient - socket read: EOF"},
+		{"ErrSockClosed", ClientError{ErrSockClosed, ""}, "shipclient - socket closed"},
+		{"ErrSendClose", ClientError{ErrSendClose, ""}, "shipclient - send close"},
+		{"ErrSendACK", ClientError{ErrSendACK, "some message"}, "shipclient - ack send: some message"},
+		{"ErrParse", ClientError{ErrParse, "invalid json"}, "shipclient - parse: invalid json"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.err.Error(); got != tt.want {
+				t.Errorf("ClientError.Error() = '%s', want '%s'", got, tt.want)
+			}
+		})
+	}
+}
