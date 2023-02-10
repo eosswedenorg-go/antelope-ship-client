@@ -19,7 +19,7 @@ func Test_newClientError(t *testing.T) {
 		args args
 		want ClientError
 	}{
-		{"Generic", args{errors.New("some message"), ErrSendACK}, ClientError{Text: "some message", Type: ErrSendACK}},
+		{"Generic", args{errors.New("some message"), ErrParse}, ClientError{Text: "some message", Type: ErrParse}},
 		{"net.ErrClosed", args{net.ErrClosed, ErrSockRead}, ClientError{Text: "use of closed connection", Type: ErrSockClosed}},
 		{"net.ErrWriteToConnected", args{net.ErrWriteToConnected, ErrSockRead}, ClientError{Text: net.ErrWriteToConnected.Error(), Type: ErrSockRead}},
 		{"ws.CloseNormalClosure", args{&ws.CloseError{Code: ws.CloseNormalClosure}, ErrNotConnected}, ClientError{Text: "websocket: close 1000 (normal)", Type: ErrSockClosed}},
@@ -45,7 +45,6 @@ func TestClientError_Error(t *testing.T) {
 		{"ErrSockRead EOF", ClientError{ErrSockRead, "EOF"}, "shipclient - socket read: EOF"},
 		{"ErrSockClosed", ClientError{ErrSockClosed, ""}, "shipclient - socket closed"},
 		{"ErrSendClose", ClientError{ErrSendClose, ""}, "shipclient - send close"},
-		{"ErrSendACK", ClientError{ErrSendACK, "some message"}, "shipclient - send ack: some message"},
 		{"ErrParse", ClientError{ErrParse, "invalid json"}, "shipclient - parse: invalid json"},
 	}
 	for _, tt := range tests {
