@@ -57,9 +57,6 @@ type Client struct {
 	// Socket connection
 	sock *ws.Conn
 
-	// Counter for how many non-ACKed messages we have received.
-	unconfirmed uint32
-
 	// Channel to be used to signal that the websocket was closed correctly.
 	close chan interface{}
 
@@ -81,9 +78,6 @@ type Client struct {
 	// if only irreversible blocks should be sent.
 	IrreversibleOnly bool
 
-	// Max number of non-ACKed messages that may be sent.
-	MaxMessagesInFlight uint32
-
 	// Callback functions
 	InitHandler   InitFn
 	BlockHandler  BlockFn
@@ -97,10 +91,9 @@ type Option func(*Client)
 // Create a new client
 func NewClient(options ...Option) *Client {
 	c := &Client{
-		ConnectTimeout:      time.Second * 30,
-		ShutdownTimeout:     time.Second * 4,
-		EndBlock:            NULL_BLOCK_NUMBER,
-		MaxMessagesInFlight: 10,
+		ConnectTimeout:  time.Second * 30,
+		ShutdownTimeout: time.Second * 4,
+		EndBlock:        NULL_BLOCK_NUMBER,
 	}
 
 	for _, opt := range options {
@@ -141,13 +134,6 @@ func WithEndBlock(value uint32) Option {
 func WithIrreversibleOnly(value bool) Option {
 	return func(c *Client) {
 		c.IrreversibleOnly = value
-	}
-}
-
-// Option to set Client.MaxMessagesInFlight
-func WithMaxMessagesInFlight(value uint32) Option {
-	return func(c *Client) {
-		c.MaxMessagesInFlight = value
 	}
 }
 
@@ -218,17 +204,11 @@ func (c *Client) ConnectContext(ctx context.Context, url string) error {
 	return err
 }
 
-// Returns the number of messages the client has received
-// but have not yet been confirmed as having been received by the client
-func (c Client) UnconfirmedMessages() uint32 {
-	return c.unconfirmed
-}
-
 func (c *Client) blockRequest() *ship.GetBlocksRequestV0 {
 	return &ship.GetBlocksRequestV0{
 		StartBlockNum:       c.StartBlock,
 		EndBlockNum:         c.EndBlock,
-		MaxMessagesInFlight: c.MaxMessagesInFlight,
+		MaxMessagesInFlight: 0xffffffff,
 		IrreversibleOnly:    c.IrreversibleOnly,
 		FetchBlock:          true,
 		FetchTraces:         c.TraceHandler != nil,
@@ -362,32 +342,7 @@ func (c *Client) Recv() (int, []byte, error) {
 		return msg_type, data, err
 	}
 
-	// Check if we need to ack messages
-	c.unconfirmed += 1
-	if c.unconfirmed >= c.MaxMessagesInFlight {
-		err = c.SendACK()
-		if err != nil {
-			return msg_type, data, err
-		}
-	}
-
 	return msg_type, data, nil
-}
-
-// Sends an Acknowledgment message that tells the
-// server that we have received X number of messages
-// where X is the number returned by c.UnconfirmedMessages().
-//
-// This is normally called internally by Recv()
-// So only use this manually if you know that you need to.
-func (c *Client) SendACK() error {
-	req := ship.NewGetBlocksAck(c.unconfirmed)
-	err := c.sock.WriteMessage(ws.BinaryMessage, req)
-	c.unconfirmed = 0
-	if err != nil {
-		return ClientError{ErrSendACK, err.Error()}
-	}
-	return nil
 }
 
 // Send a close message to the server.

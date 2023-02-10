@@ -112,13 +112,11 @@ func TestClient_ConstructWithOptions(t *testing.T) {
 	client := NewClient(WithStartBlock(1234),
 		WithEndBlock(5000),
 		WithIrreversibleOnly(true),
-		WithMaxMessagesInFlight(20),
 		WithConnectTimeout(time.Second*15))
 
 	assert.Equal(t, client.StartBlock, uint32(1234))
 	assert.Equal(t, client.EndBlock, uint32(5000))
 	assert.Equal(t, client.IrreversibleOnly, true)
-	assert.Equal(t, client.MaxMessagesInFlight, uint32(20))
 	assert.Equal(t, client.ConnectTimeout, time.Second*15)
 }
 
