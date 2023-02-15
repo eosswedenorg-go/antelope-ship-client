@@ -9,7 +9,7 @@ import (
 
 	eos "github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ship"
-	shipclient "github.com/eosswedenorg-go/antelope-ship-client"
+	"github.com/eosswedenorg-go/antelope-ship-client/websocket"
 )
 
 // -----------------------------
@@ -28,34 +28,6 @@ var APIURL string // = "http://127.0.0.1:8088"
 // This should be something other than zero. check a block explorer or /v1/chain/get_info for the latest block number.
 // or use APIURL to make the code fetch it itself.
 var startBlock uint32 = 0
-
-// True if the client should request a status message from the ship server on startup.
-var sendStatus bool = true
-
-// True if traces should be printed (this can get spammy)
-var printTraces bool = false
-
-func initHandler(abi *eos.ABI) {
-	log.Println("Server abi:", abi.Version)
-}
-
-func processBlock(block *ship.GetBlocksResultV0) {
-	if block.ThisBlock.BlockNum%100 == 0 {
-		log.Printf("Current: %d, Head: %d\n", block.ThisBlock.BlockNum, block.Head.BlockNum)
-	}
-}
-
-func processTraces(traces []*ship.TransactionTraceV0) {
-	for _, trace := range traces {
-		log.Println("Trace ID:", trace.ID)
-	}
-}
-
-func processStatus(status *ship.GetStatusResultV0) {
-	log.Println("-- Status --")
-	log.Println("Head", status.Head.BlockNum, status.Head.BlockID)
-	log.Println("ChainStateBeginBlock", status.ChainStateBeginBlock, "ChainStateEndBlock", status.ChainStateEndBlock)
-}
 
 func main() {
 	// Create done and interrupt channels.
@@ -77,43 +49,48 @@ func main() {
 
 	log.Println("Connecting to ship starting at block:", startBlock)
 
-	client := shipclient.NewClient(shipclient.WithStartBlock(startBlock))
-	client.InitHandler = initHandler
-	client.BlockHandler = processBlock
-	client.StatusHandler = processStatus
-
-	// Only assign trace handler if printTraces is true.
-	if printTraces {
-		client.TraceHandler = processTraces
-	}
+	client := websocket.NewClient()
 
 	// Connect to SHIP client
-	err := client.Connect(shipHost)
+	err := client.Connect(context.Background(), shipHost)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Request streaming of blocks from ship
-	err = client.SendBlocksRequest()
+	err = client.Write(ship.Request{
+		BaseVariant: eos.BaseVariant{
+			TypeID: ship.RequestVariant.TypeID("get_blocks_request_v0"),
+			Impl: ship.GetBlocksRequestV0{
+				StartBlockNum:       startBlock,
+				EndBlockNum:         0xffffffff,
+				MaxMessagesInFlight: 0xffffffff,
+				IrreversibleOnly:    false,
+				FetchBlock:          true,
+				FetchTraces:         false,
+				FetchDeltas:         false,
+				HavePositions:       []*ship.BlockPosition{},
+			},
+		},
+	})
+
 	if err != nil {
 		log.Fatalln(err)
-	}
-
-	// Request status message from ship
-	if sendStatus {
-		err = client.SendStatusRequest()
-		if err != nil {
-			log.Fatalln(err)
-		}
 	}
 
 	// Spawn message read loop in another thread.
 	go func() {
 		for {
-			err := client.Read()
+			msg, err := client.Read()
 			if err != nil {
 				log.Print(err)
 				break
+			}
+
+			if block, ok := msg.Impl.(*ship.GetBlocksResultV0); ok {
+				log.Printf("Current: %d, Head: %d\n", block.ThisBlock.BlockNum, block.Head.BlockNum)
+			} else if status, ok := msg.Impl.(*ship.GetStatusResultV0); ok {
+				log.Printf("Status, Chain block: %d, Trace block: %d\n", status.ChainStateBeginBlock, status.TraceBeginBlock)
 			}
 		}
 
@@ -128,21 +105,15 @@ func main() {
 		select {
 		case <-interrupt:
 			log.Println("Interrupt, closing")
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*4)
+			defer cancel()
 
 			// Cleanly close the connection by sending a close message and then
 			// waiting (with timeout) for the server to close the connection.
-			err := client.Shutdown()
-			if err != nil {
-				log.Println("Failed to send close message", err)
+			if err := client.Shutdown(ctx); err != nil {
+				log.Println("Failed to close websocket", err)
 			}
 
-			select {
-			case <-done:
-				log.Println("Closed")
-			case <-time.After(time.Second * 4):
-				log.Println("Timeout")
-			}
-			return
 		case <-done:
 			log.Println("Closed")
 			return
