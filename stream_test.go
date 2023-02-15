@@ -63,6 +63,9 @@ func (h testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = wsock.WriteMessage(ws.TextMessage, []byte(`{"version": "test"}`))
+	assert.NilError(h.t, err)
+
 	if h.CloseError {
 		wsock.Close()
 	} else {
@@ -108,53 +111,53 @@ func loadBlock(file string) ([]byte, error) {
 	return hex.DecodeString(string(hex_data))
 }
 
-func TestClient_ConstructWithOptions(t *testing.T) {
-	client := NewClient(WithStartBlock(1234),
+func TestHandler_ConstructWithOptions(t *testing.T) {
+	handler := NewStream(WithStartBlock(1234),
 		WithEndBlock(5000),
 		WithIrreversibleOnly(true),
 		WithConnectTimeout(time.Second*15))
 
-	assert.Equal(t, client.StartBlock, uint32(1234))
-	assert.Equal(t, client.EndBlock, uint32(5000))
-	assert.Equal(t, client.IrreversibleOnly, true)
-	assert.Equal(t, client.ConnectTimeout, time.Second*15)
+	assert.Equal(t, handler.StartBlock, uint32(1234))
+	assert.Equal(t, handler.EndBlock, uint32(5000))
+	assert.Equal(t, handler.IrreversibleOnly, true)
+	assert.Equal(t, handler.ConnectTimeout, time.Second*15)
 }
 
-func TestClient_ConstructWithCustomOption(t *testing.T) {
-	client := NewClient(func(c *Client) {
-		c.StartBlock = 4000
-		c.EndBlock = 5000
-		c.ConnectTimeout = time.Minute
+func TestHandler_ConstructWithCustomOption(t *testing.T) {
+	handler := NewStream(func(s *Stream) {
+		s.StartBlock = 4000
+		s.EndBlock = 5000
+		s.ConnectTimeout = time.Minute
 	})
 
-	assert.Equal(t, client.StartBlock, uint32(4000))
-	assert.Equal(t, client.EndBlock, uint32(5000))
-	assert.Equal(t, client.ConnectTimeout, time.Minute)
+	assert.Equal(t, handler.StartBlock, uint32(4000))
+	assert.Equal(t, handler.EndBlock, uint32(5000))
+	assert.Equal(t, handler.ConnectTimeout, time.Minute)
 }
 
-func TestClient_ConnectOK(t *testing.T) {
+func TestHandler_ConnectOK(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
-	client := NewClient()
-	assert.NilError(t, client.Connect(s.URL.String()))
+	stream := NewStream()
+	assert.NilError(t, stream.Connect(s.URL.String()))
 }
 
-func TestClient_ConnectFail(t *testing.T) {
-	client := NewClient()
-	err := client.Connect("ws://:9999")
+func TestHandler_ConnectFail(t *testing.T) {
+	stream := NewStream()
+	err := stream.Connect("ws://:9999")
 	assert.Error(t, err, "dial tcp :9999: connect: connection refused")
 }
 
-func TestClient_ConnectTimeout(t *testing.T) {
-	client := NewClient(WithConnectTimeout(time.Millisecond * 10))
-	err := client.Connect("ws://99.99.99.99:9999")
+func TestHandler_ConnectTimeout(t *testing.T) {
+	stream := NewStream(WithConnectTimeout(time.Millisecond * 10))
+	err := stream.Connect("ws://99.99.99.99:9999")
 	assert.Error(t, err, "dial tcp 99.99.99.99:9999: i/o timeout")
 }
 
-func TestClient_ConnectContextCancel(t *testing.T) {
+func TestHandler_ConnectContextCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	client := NewClient(WithConnectTimeout(time.Minute))
+	stream := NewStream(WithConnectTimeout(time.Minute))
 	defer cancel()
 
 	go func() {
@@ -162,107 +165,67 @@ func TestClient_ConnectContextCancel(t *testing.T) {
 		cancel()
 	}()
 
-	err := client.ConnectContext(ctx, "ws://99.99.99.99:9999")
+	err := stream.ConnectContext(ctx, "ws://99.99.99.99:9999")
 
 	assert.ErrorIs(t, ctx.Err(), context.Canceled)
 	assert.Error(t, err, "dial tcp 99.99.99.99:9999: operation was canceled")
 }
 
-func TestClient_ReadFromNormalClosedSocket(t *testing.T) {
+func TestHandler_ReadFromNormalClosedSocket(t *testing.T) {
 	handler := testHandler{t: t}
 
 	s := newServerWithHandler(t, &handler)
 	defer s.Close()
 
-	client := NewClient(WithStartBlock(23617231))
-	err := client.Connect(s.URL.String())
+	stream := NewStream(WithStartBlock(23617231))
+	err := stream.Connect(s.URL.String())
 	assert.NilError(t, err)
 
-	err = client.sendClose(ws.CloseNormalClosure, "")
-	assert.NilError(t, err)
+	go func() {
+		time.Sleep(time.Millisecond * 100)
+		_ = stream.Shutdown()
+	}()
 
-	err = client.Read()
-	assert.Error(t, err, "shipclient - socket closed: websocket: close 1000 (normal)")
-
-	shErr, ok := err.(ClientError)
-	assert.Equal(t, true, ok, "Failed to cast error to ShipClientError")
-	assert.Equal(t, shErr.Type, ErrSockClosed)
+	err = stream.Run()
+	assert.Error(t, err, "websocket: close 1000 (normal)")
 }
 
-func TestClient_ReadFromAbnormalClosedSocket(t *testing.T) {
+func TestHandler_ReadFromAbnormalClosedSocket(t *testing.T) {
 	handler := testHandler{t: t, CloseError: true}
 
 	s := newServerWithHandler(t, &handler)
 	defer s.Close()
 
-	client := NewClient(WithStartBlock(72367186))
+	stream := NewStream(WithStartBlock(72367186))
 
-	err := client.Connect(s.URL.String())
+	err := stream.Connect(s.URL.String())
 	assert.NilError(t, err)
 
-	err = client.Read()
-	assert.Error(t, err, "shipclient - socket closed: websocket: close 1006 (abnormal closure): unexpected EOF")
-
-	shErr, ok := err.(ClientError)
-	assert.Equal(t, true, ok, "Failed to cast error to ClientError")
-	assert.Equal(t, shErr.Type, ErrSockClosed)
+	err = stream.Run()
+	assert.Error(t, err, "websocket: close 1006 (abnormal closure): unexpected EOF")
 }
 
-func TestClient_ReadIsUnblockedOnShutdown(t *testing.T) {
-	done := make(chan interface{})
+func TestHandler_ReadIsUnblockedOnShutdown(t *testing.T) {
 	handler := testHandler{t: t}
 
 	s := newServerWithHandler(t, &handler)
 	defer s.Close()
 
-	client := NewClient(WithStartBlock(53482321))
-	err := client.Connect(s.URL.String())
+	stream := NewStream(WithStartBlock(53482321))
+	err := stream.Connect(s.URL.String())
 	assert.NilError(t, err)
 
 	go func() {
-		defer close(done)
-		err := client.Read()
-		assert.Error(t, err, "shipclient - socket closed: websocket: close 1000 (normal)")
-		shErr, ok := err.(ClientError)
-		assert.Equal(t, true, ok, "Failed to cast error to ClientError")
-		assert.Equal(t, shErr.Type, ErrSockClosed)
+		time.Sleep(time.Millisecond * 500)
+		err = stream.Shutdown()
+		assert.NilError(t, err)
 	}()
 
-	time.Sleep(time.Millisecond * 500)
-	err = client.Shutdown()
-	assert.NilError(t, err)
-
-	<-done
+	err = stream.Run()
+	assert.Error(t, err, "websocket: close 1000 (normal)")
 }
 
-func TestClient_ReadIsUnblockedOnClose(t *testing.T) {
-	done := make(chan interface{})
-	handler := testHandler{t: t}
-
-	s := newServerWithHandler(t, &handler)
-	defer s.Close()
-
-	client := NewClient(WithStartBlock(53482321))
-	err := client.Connect(s.URL.String())
-	assert.NilError(t, err)
-
-	go func() {
-		defer close(done)
-		err := client.Read()
-		assert.Error(t, err, "shipclient - socket closed: use of closed connection")
-		shErr, ok := err.(ClientError)
-		assert.Equal(t, true, ok, "Failed to cast error to ClientError")
-		assert.Equal(t, shErr.Type, ErrSockClosed)
-	}()
-
-	time.Sleep(time.Millisecond * 500)
-	err = client.Close()
-	assert.NilError(t, err)
-
-	<-done
-}
-
-func TestClient_StatusMessage(t *testing.T) {
+func TestHandler_StatusMessage(t *testing.T) {
 	called := false
 
 	expected := ship.GetStatusResultV0{
@@ -284,7 +247,7 @@ func TestClient_StatusMessage(t *testing.T) {
 		called = true
 		assert.DeepEqual(t, expected, *r)
 	}
-	client := NewClient(WithStartBlock(1234), WithStatusHandler(status_handler))
+	stream := NewStream(WithStartBlock(1234), WithStatusHandler(status_handler))
 
 	handler := testHandler{
 		t:                     t,
@@ -304,20 +267,23 @@ func TestClient_StatusMessage(t *testing.T) {
 	s := newServerWithHandler(t, &handler)
 	defer s.Close()
 
-	err := client.Connect(s.URL.String())
+	err := stream.Connect(s.URL.String())
 	assert.NilError(t, err)
-	err = client.SendStatusRequest()
-	assert.NilError(t, err)
-
-	err = client.Read()
+	err = stream.SendStatusRequest()
 	assert.NilError(t, err)
 
-	client.Close()
+	go func() {
+		time.Sleep(time.Millisecond * 100)
+		_ = stream.Shutdown()
+	}()
+
+	err = stream.Run()
+	assert.Error(t, err, "websocket: close 1000 (normal)")
 
 	assert.Assert(t, called, "Status callback never called")
 }
 
-func TestClient_ReadBlockMessages(t *testing.T) {
+func TestHandler_ReadBlockMessages(t *testing.T) {
 	called := false
 
 	expected := ship.GetBlocksResultV0{
@@ -343,11 +309,11 @@ func TestClient_ReadBlockMessages(t *testing.T) {
 		called = true
 		assert.DeepEqual(t, expected, *r)
 	}
-	client := NewClient(WithStartBlock(1234), WithBlockHandler(block_handler))
+	stream := NewStream(WithStartBlock(1234), WithBlockHandler(block_handler))
 
 	handler := testHandler{
 		t:                    t,
-		ExpectedBlockRequest: client.blockRequest(),
+		ExpectedBlockRequest: stream.blockRequest(),
 		responses: [][]byte{
 			{
 				0x01, 0x88, 0x13, 0x00, 0x00, 0x0b, 0x10, 0x07, 0xfb, 0x2b, 0x23, 0x3b, 0x6b, 0xa8, 0x5f, 0x4e, 0xbe, 0x64,
@@ -366,20 +332,23 @@ func TestClient_ReadBlockMessages(t *testing.T) {
 	s := newServerWithHandler(t, &handler)
 	defer s.Close()
 
-	err := client.Connect(s.URL.String())
+	err := stream.Connect(s.URL.String())
 	assert.NilError(t, err)
-	err = client.SendBlocksRequest()
-	assert.NilError(t, err)
-
-	err = client.Read()
+	err = stream.SendBlocksRequest()
 	assert.NilError(t, err)
 
-	client.Close()
+	go func() {
+		time.Sleep(time.Millisecond * 100)
+		_ = stream.Shutdown()
+	}()
+
+	err = stream.Run()
+	assert.Error(t, err, "websocket: close 1000 (normal)")
 
 	assert.Assert(t, called, "Block callback never called")
 }
 
-func TestClient_ReadTraceMessages(t *testing.T) {
+func TestHandler_ReadTraceMessages(t *testing.T) {
 	called := false
 
 	// First trace 71f9afc519eab1bcf599bded5848f3167c1603238f4eb0f7998565b559b0b988
@@ -541,14 +510,14 @@ func TestClient_ReadTraceMessages(t *testing.T) {
 		assert.DeepEqual(t, trace1, *r[1], opts)
 	}
 
-	client := NewClient(WithStartBlock(279028468), WithTraceHandler(trace_handler))
+	stream := NewStream(WithStartBlock(279028468), WithTraceHandler(trace_handler))
 
 	block0, err := loadBlock("testdata/antelope_bock279028468.hex")
 	assert.NilError(t, err)
 
 	handler := testHandler{
 		t:                    t,
-		ExpectedBlockRequest: client.blockRequest(),
+		ExpectedBlockRequest: stream.blockRequest(),
 		responses: [][]byte{
 			block0,
 		},
@@ -557,15 +526,18 @@ func TestClient_ReadTraceMessages(t *testing.T) {
 	s := newServerWithHandler(t, &handler)
 	defer s.Close()
 
-	err = client.Connect(s.URL.String())
+	err = stream.Connect(s.URL.String())
 	assert.NilError(t, err)
-	err = client.SendBlocksRequest()
-	assert.NilError(t, err)
-
-	err = client.Read()
+	err = stream.SendBlocksRequest()
 	assert.NilError(t, err)
 
-	client.Close()
+	go func() {
+		time.Sleep(time.Millisecond * 100)
+		_ = stream.Shutdown()
+	}()
+
+	err = stream.Run()
+	assert.Error(t, err, "websocket: close 1000 (normal)")
 
 	assert.Assert(t, called, "Trace callback never called")
 }
