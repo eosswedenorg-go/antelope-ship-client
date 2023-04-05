@@ -17,7 +17,8 @@ Documentation can be found over at [pkg.go.dev](https://pkg.go.dev/github.com/eo
 
 ### Examples
 
-* [Basic](example_basic_test.go)
+* [Basic](examples/basic/main.go)
+* [Stream](examples/stream/main.go)
 
 ### Author
 
