@@ -34,6 +34,9 @@ var sendStatus bool = true
 // True if traces should be printed (this can get spammy)
 var printTraces bool = false
 
+// True if table deltas should be printed (this can get spammy)
+var printTableDeltas bool = false
+
 func initHandler(abi *eos.ABI) {
 	log.Println("Server abi:", abi.Version)
 }
@@ -41,6 +44,12 @@ func initHandler(abi *eos.ABI) {
 func processBlock(block *ship.GetBlocksResultV0) {
 	log.Printf("Block: %d %s\n",
 		block.ThisBlock.BlockNum, block.ThisBlock.BlockID)
+}
+
+func processTableDeltas(deltas []*ship.TableDeltaV0) {
+	for _, delta := range deltas {
+		log.Println("Table Delta:", delta.Name, "rows:", len(delta.Rows))
+	}
 }
 
 func processTraces(traces []*ship.TransactionTraceV0) {
@@ -77,6 +86,10 @@ func main() {
 	// Only assign trace handler if printTraces is true.
 	if printTraces {
 		stream.TraceHandler = processTraces
+	}
+
+	if printTableDeltas {
+		stream.TableDeltaHandler = processTableDeltas
 	}
 
 	// Connect to SHIP client
