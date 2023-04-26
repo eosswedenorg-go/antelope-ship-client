@@ -20,7 +20,7 @@ var shipHost string = "ws://127.0.0.1:8089"
 
 // Url to the antelope api on the same node as ship is running.
 // Use this to fetch a sane value for `startBlock`
-var APIURL string = "http://172.16.6.124:8688"
+var APIURL string = "http://127.0.0.1:8688"
 
 // If `APIURL` is not set, this is the block
 // where we request ship to start sending blocks from.
