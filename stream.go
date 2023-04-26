@@ -43,11 +43,12 @@ import (
 const NULL_BLOCK_NUMBER uint32 = 0xffffffff
 
 type (
-	InitFn   func(*eos.ABI)
-	BlockFn  func(*ship.GetBlocksResultV0)
-	TraceFn  func([]*ship.TransactionTraceV0)
-	StatusFn func(*ship.GetStatusResultV0)
-	CloseFn  func()
+	InitFn       func(*eos.ABI)
+	BlockFn      func(*ship.GetBlocksResultV0)
+	TraceFn      func([]*ship.TransactionTraceV0)
+	TableDeltaFn func([]*ship.TableDeltaV0)
+	StatusFn     func(*ship.GetStatusResultV0)
+	CloseFn      func()
 )
 
 type Stream struct {
@@ -70,11 +71,12 @@ type Stream struct {
 	IrreversibleOnly bool
 
 	// Callback functions
-	InitHandler   InitFn
-	BlockHandler  BlockFn
-	TraceHandler  TraceFn
-	StatusHandler StatusFn
-	CloseHandler  CloseFn
+	InitHandler       InitFn
+	BlockHandler      BlockFn
+	TraceHandler      TraceFn
+	TableDeltaHandler TableDeltaFn
+	StatusHandler     StatusFn
+	CloseHandler      CloseFn
 }
 
 type Option func(*Stream)
@@ -149,6 +151,12 @@ func WithBlockHandler(value BlockFn) Option {
 	}
 }
 
+func WithTableDeltaHandler(value TableDeltaFn) Option {
+	return func(s *Stream) {
+		s.TableDeltaHandler = value
+	}
+}
+
 // Option to set Stream.StatusHandler
 func WithStatusHandler(value StatusFn) Option {
 	return func(s *Stream) {
@@ -205,7 +213,7 @@ func (s *Stream) blockRequest() *ship.GetBlocksRequestV0 {
 		IrreversibleOnly:    s.IrreversibleOnly,
 		FetchBlock:          s.BlockHandler != nil,
 		FetchTraces:         s.TraceHandler != nil,
-		FetchDeltas:         false,
+		FetchDeltas:         s.TableDeltaHandler != nil,
 		HavePositions:       []*ship.BlockPosition{},
 	}
 }
@@ -257,6 +265,10 @@ func (s *Stream) Run() error {
 
 			if block.Traces != nil && len(block.Traces.Elem) > 0 && s.TraceHandler != nil {
 				s.TraceHandler(block.Traces.AsTransactionTracesV0())
+			}
+
+			if block.Deltas != nil && len(block.Deltas.Elem) > 0 && s.TableDeltaHandler != nil {
+				s.TableDeltaHandler(block.Deltas.AsTableDeltasV0())
 			}
 
 			if block.ThisBlock.BlockNum+1 >= s.EndBlock {
