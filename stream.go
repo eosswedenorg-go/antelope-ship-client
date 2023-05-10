@@ -144,6 +144,13 @@ func WithTraceHandler(value TraceFn) Option {
 	}
 }
 
+// Option to include traces without using a specific trace handler
+func WithTraces() Option {
+	return func(s *Stream) {
+		s.TraceHandler = func([]*ship.TransactionTraceV0) {}
+	}
+}
+
 // Option to set Stream.BlockHandler
 func WithBlockHandler(value BlockFn) Option {
 	return func(s *Stream) {

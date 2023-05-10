@@ -123,6 +123,10 @@ func TestHandler_ConstructWithOptions(t *testing.T) {
 	assert.Equal(t, handler.ConnectTimeout, time.Second*15)
 }
 
+func TestHandler_ConstructWithTraces(t *testing.T) {
+	assert.Equal(t, true, NewStream(WithTraces()).blockRequest().FetchTraces)
+}
+
 func TestHandler_ConstructWithCustomOption(t *testing.T) {
 	handler := NewStream(func(s *Stream) {
 		s.StartBlock = 4000
