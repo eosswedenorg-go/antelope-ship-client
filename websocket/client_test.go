@@ -82,7 +82,7 @@ func TestClient_ConnectContextCancel(t *testing.T) {
 
 	// Start go routine that cancels the context.
 	go func() {
-		// Wait some time for client.Connect() to happend.
+		// Wait some time for client.Connect() to happen.
 		time.Sleep(time.Millisecond * 100)
 		cancel()
 	}()
