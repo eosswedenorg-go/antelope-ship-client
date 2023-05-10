@@ -100,7 +100,7 @@ func (c *Client) readAbi() error {
 
 // Read a result message from the websocket.
 //
-// This function will block until atleast one message is read or an error occured.
+// This function will block until atleast one message is read or an error occurred.
 func (c *Client) Read() (ship.Result, error) {
 	r := ship.Result{}
 
@@ -164,7 +164,7 @@ func (c *Client) Shutdown(ctx context.Context) error {
 		return err
 	}
 
-	// Spawn a go routine that will read until error (close message recived)
+	// Spawn a go routine that will read until error (close message received)
 	go func() {
 		for {
 			_, err := c.Read()
