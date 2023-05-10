@@ -2,6 +2,7 @@
 
 [![Test](https://github.com/eosswedenorg-go/antelope-ship-client/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/eosswedenorg-go/antelope-ship-client/actions/workflows/test.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/eosswedenorg-go/antelope-ship-client.svg)](https://pkg.go.dev/github.com/eosswedenorg-go/antelope-ship-client)
+[![Go Report Card](https://goreportcard.com/badge/github.com/eosswedenorg-go/antelope-ship-client)](https://goreportcard.com/report/github.com/eosswedenorg-go/antelope-ship-client)
 
 Client Implementation of Antelope state-history websocket.
 
