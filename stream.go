@@ -247,6 +247,20 @@ func (s *Stream) SendStatusRequest() error {
 	})
 }
 
+func (s *Stream) routeBlock(block *ship.GetBlocksResultV0) {
+	if s.BlockHandler != nil {
+		s.BlockHandler(block)
+	}
+
+	if block.Traces != nil && len(block.Traces.Elem) > 0 && s.TraceHandler != nil {
+		s.TraceHandler(block.Traces.AsTransactionTracesV0())
+	}
+
+	if block.Deltas != nil && len(block.Deltas.Elem) > 0 && s.TableDeltaHandler != nil {
+		s.TableDeltaHandler(block.Deltas.AsTableDeltasV0())
+	}
+}
+
 // Run starts the stream.
 // Messages from the server is read and forwarded to the appropriate callback function.
 // This function will block until an error occur or the stream is closed.
@@ -266,17 +280,7 @@ func (s *Stream) Run() error {
 				continue
 			}
 
-			if s.BlockHandler != nil {
-				s.BlockHandler(block)
-			}
-
-			if block.Traces != nil && len(block.Traces.Elem) > 0 && s.TraceHandler != nil {
-				s.TraceHandler(block.Traces.AsTransactionTracesV0())
-			}
-
-			if block.Deltas != nil && len(block.Deltas.Elem) > 0 && s.TableDeltaHandler != nil {
-				s.TableDeltaHandler(block.Deltas.AsTableDeltasV0())
-			}
+			s.routeBlock(block)
 
 			if block.ThisBlock.BlockNum+1 >= s.EndBlock {
 				// Send Close message, ignore errors here as we
