@@ -243,7 +243,7 @@ func (s *Stream) SendStatusRequest() error {
 // Run starts the stream.
 // Messages from the server is read and forwarded to the appropriate callback function.
 // This function will block until an error occur or the stream is closed.
-// Eiter way the return value is never nil.
+// Either way the return value is never nil.
 func (s *Stream) Run() error {
 	for {
 		result, err := s.client.Read()
