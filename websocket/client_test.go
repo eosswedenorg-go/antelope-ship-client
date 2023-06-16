@@ -456,3 +456,38 @@ func TestClient_ShutdownContextCancel(t *testing.T) {
 	err = client.Shutdown(ctx)
 	assert.ErrorIs(t, err, context.Canceled)
 }
+
+func TestIsCloseError(t *testing.T) {
+	tests := []struct {
+		name string
+		code int
+	}{
+		{"Normal", 1000},
+		{"GoingAway", 1001},
+		{"ProtocolError", 1002},
+		{"UnsupportedData", 1003},
+		{"NoStatusReceived", 1005},
+		{"AbnormalClosure", 1006},
+		{"InvalidFramePayloadData", 1007},
+		{"PolicyViolation", 1008},
+		{"MessageTooBig", 1009},
+		{"MandatoryExtension", 1010},
+		{"InternalServerErr", 1011},
+		{"ServiceRestart", 1012},
+		{"TryAgainLater", 1013},
+		{"TLSHandshake", 1015},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := &ws.CloseError{Code: tt.code}
+			assert.Equal(t, IsCloseError(err, tt.code), true)
+		})
+	}
+
+	// Test default parameter
+	assert.Equal(t, IsCloseError(&ws.CloseError{Code: 1000}), true)
+
+	// Test that generic error is not a close error.
+	assert.Equal(t, IsCloseError(errors.New("test")), false)
+}

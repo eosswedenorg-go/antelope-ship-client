@@ -207,3 +207,10 @@ func (c *Client) Close() error {
 
 	return err
 }
+
+func IsCloseError(err error, codes ...int) bool {
+	if len(codes) < 1 {
+		codes = []int{ws.CloseNormalClosure}
+	}
+	return ws.IsCloseError(err, codes...)
+}
