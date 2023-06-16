@@ -121,7 +121,7 @@ func (c *Client) Read() (ship.Result, error) {
 	}
 
 	if msg_type != ws.BinaryMessage {
-		return r, errors.New("xxx")
+		return r, ErrExpectedBinaryMessage
 	}
 
 	// Unpack the message
