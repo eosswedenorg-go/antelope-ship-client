@@ -155,6 +155,20 @@ func TestClient_ConnectFetchABIDecodeFails(t *testing.T) {
 	assert.ErrorIs(t, err, ErrDecodeABI)
 }
 
+func TestClient_ReadNonBinaryMessage(t *testing.T) {
+	s := newWSServer(wsHandlerFunc(t, func(c *ws.Conn) {
+		_ = c.WriteMessage(ws.TextMessage, []byte("This is a text message"))
+	}))
+	defer s.Close()
+
+	client := NewClient()
+	err := client.Connect(context.Background(), s.URL)
+	assert.NilError(t, err)
+
+	_, err = client.Read()
+	assert.ErrorIs(t, err, ErrExpectedBinaryMessage)
+}
+
 func TestClient_ReadFromNormalClosedSocket(t *testing.T) {
 	s := newWSServer(wsHandlerFunc(t, func(c *ws.Conn) {
 		// Just read from the socket to confirm close handshake.
