@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	ErrNotConnected = errors.New("Socket not connected")
-	ErrDecodeABI    = errors.New("Failed to decode ABI")
-	ErrExpectedABI  = errors.New("expected abi message")
+	ErrNotConnected          = errors.New("Socket not connected")
+	ErrDecodeABI             = errors.New("Failed to decode ABI")
+	ErrExpectedABI           = errors.New("expected abi message")
+	ErrExpectedBinaryMessage = errors.New("expected binary message")
 )
 
 // Client is a low-level SHIP websocket client.
