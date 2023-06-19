@@ -111,7 +111,7 @@ func loadBlock(file string) ([]byte, error) {
 	return hex.DecodeString(string(hex_data))
 }
 
-func TestHandler_ConstructWithOptions(t *testing.T) {
+func TestStream_ConstructWithOptions(t *testing.T) {
 	handler := NewStream(WithStartBlock(1234),
 		WithEndBlock(5000),
 		WithIrreversibleOnly(true),
@@ -123,11 +123,11 @@ func TestHandler_ConstructWithOptions(t *testing.T) {
 	assert.Equal(t, handler.ConnectTimeout, time.Second*15)
 }
 
-func TestHandler_ConstructWithTraces(t *testing.T) {
+func TestStream_ConstructWithTraces(t *testing.T) {
 	assert.Equal(t, true, NewStream(WithTraces()).blockRequest().FetchTraces)
 }
 
-func TestHandler_ConstructWithCustomOption(t *testing.T) {
+func TestStream_ConstructWithCustomOption(t *testing.T) {
 	handler := NewStream(func(s *Stream) {
 		s.StartBlock = 4000
 		s.EndBlock = 5000
@@ -139,7 +139,7 @@ func TestHandler_ConstructWithCustomOption(t *testing.T) {
 	assert.Equal(t, handler.ConnectTimeout, time.Minute)
 }
 
-func TestHandler_ConnectOK(t *testing.T) {
+func TestStream_ConnectOK(t *testing.T) {
 	s := newServer(t)
 	defer s.Close()
 
@@ -147,19 +147,19 @@ func TestHandler_ConnectOK(t *testing.T) {
 	assert.NilError(t, stream.Connect(s.URL.String()))
 }
 
-func TestHandler_ConnectFail(t *testing.T) {
+func TestStream_ConnectFail(t *testing.T) {
 	stream := NewStream()
 	err := stream.Connect("ws://:9999")
 	assert.Error(t, err, "dial tcp :9999: connect: connection refused")
 }
 
-func TestHandler_ConnectTimeout(t *testing.T) {
+func TestStream_ConnectTimeout(t *testing.T) {
 	stream := NewStream(WithConnectTimeout(time.Millisecond * 10))
 	err := stream.Connect("ws://99.99.99.99:9999")
 	assert.Error(t, err, "dial tcp 99.99.99.99:9999: i/o timeout")
 }
 
-func TestHandler_ConnectContextCancel(t *testing.T) {
+func TestStream_ConnectContextCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	stream := NewStream(WithConnectTimeout(time.Minute))
 	defer cancel()
@@ -175,7 +175,7 @@ func TestHandler_ConnectContextCancel(t *testing.T) {
 	assert.Error(t, err, "dial tcp 99.99.99.99:9999: operation was canceled")
 }
 
-func TestHandler_ReadFromNormalClosedSocket(t *testing.T) {
+func TestStream_ReadFromNormalClosedSocket(t *testing.T) {
 	handler := testHandler{t: t}
 
 	s := newServerWithHandler(t, &handler)
@@ -194,7 +194,7 @@ func TestHandler_ReadFromNormalClosedSocket(t *testing.T) {
 	assert.Error(t, err, "websocket: close 1000 (normal)")
 }
 
-func TestHandler_ReadFromAbnormalClosedSocket(t *testing.T) {
+func TestStream_ReadFromAbnormalClosedSocket(t *testing.T) {
 	handler := testHandler{t: t, CloseError: true}
 
 	s := newServerWithHandler(t, &handler)
@@ -209,7 +209,7 @@ func TestHandler_ReadFromAbnormalClosedSocket(t *testing.T) {
 	assert.Error(t, err, "websocket: close 1006 (abnormal closure): unexpected EOF")
 }
 
-func TestHandler_ReadIsUnblockedOnShutdown(t *testing.T) {
+func TestStream_ReadIsUnblockedOnShutdown(t *testing.T) {
 	handler := testHandler{t: t}
 
 	s := newServerWithHandler(t, &handler)
@@ -229,7 +229,7 @@ func TestHandler_ReadIsUnblockedOnShutdown(t *testing.T) {
 	assert.Error(t, err, "websocket: close 1000 (normal)")
 }
 
-func TestHandler_StatusMessage(t *testing.T) {
+func TestStream_StatusMessage(t *testing.T) {
 	called := false
 
 	expected := ship.GetStatusResultV0{
@@ -287,7 +287,7 @@ func TestHandler_StatusMessage(t *testing.T) {
 	assert.Assert(t, called, "Status callback never called")
 }
 
-func TestHandler_ReadBlockMessages(t *testing.T) {
+func TestStream_ReadBlockMessages(t *testing.T) {
 	called := false
 
 	expected := ship.GetBlocksResultV0{
@@ -352,7 +352,7 @@ func TestHandler_ReadBlockMessages(t *testing.T) {
 	assert.Assert(t, called, "Block callback never called")
 }
 
-func TestHandler_ReadTraceMessages(t *testing.T) {
+func TestStream_ReadTraceMessages(t *testing.T) {
 	called := false
 
 	// First trace 71f9afc519eab1bcf599bded5848f3167c1603238f4eb0f7998565b559b0b988
