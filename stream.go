@@ -32,6 +32,7 @@ package antelope_ship_client
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	eos "github.com/eoscanada/eos-go"
@@ -39,6 +40,8 @@ import (
 	"github.com/eosswedenorg-go/antelope-ship-client/websocket"
 	ws "github.com/gorilla/websocket"
 )
+
+var ErrEndBlockReached = errors.New("ship: end block reached")
 
 const NULL_BLOCK_NUMBER uint32 = 0xffffffff
 
@@ -266,9 +269,14 @@ func (s *Stream) routeBlock(block *ship.GetBlocksResultV0) {
 // This function will block until an error occur or the stream is closed.
 // Either way the return value is never nil.
 func (s *Stream) Run() error {
+	var endblockreached bool = false // End of stream
+
 	for {
 		result, err := s.client.Read()
 		if err != nil {
+			if ws.IsCloseError(err, ws.CloseNormalClosure) && endblockreached {
+				err = ErrEndBlockReached
+			}
 			_ = s.Shutdown()
 			return err
 		}
@@ -286,6 +294,9 @@ func (s *Stream) Run() error {
 				// Send Close message, ignore errors here as we
 				// should resume reading from the socket.
 				_ = s.client.WriteClose(ws.CloseNormalClosure, "end block reached")
+
+				// Signal that the stream was closed due to end block reached.
+				endblockreached = true
 			}
 		}
 
