@@ -175,7 +175,6 @@ func (c *Client) Shutdown(ctx context.Context) error {
 		for {
 			_, err := c.Read()
 			if err != nil {
-				c.Close()
 				return
 			}
 		}
