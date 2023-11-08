@@ -1,6 +1,6 @@
 module github.com/eosswedenorg-go/antelope-ship-client
 
-go 1.18
+go 1.19
 
 require (
 	github.com/eoscanada/eos-go v0.10.3-0.20230609180026-5d4ee54fe15e
