@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"syscall"
 	"testing"
@@ -343,7 +344,13 @@ func TestClient_WSCloseHandshake(t *testing.T) {
 			// NOTE: We only assert that a close error is returned here because
 			// the specs only requires that the other side sends a close message
 			// in return.
-			assert.ErrorType(t, err, &ws.CloseError{})
+			if err == nil {
+				t.Errorf("Expected *ws.CloseError but error is nil")
+				return
+			}
+			if _, ok := err.(*ws.CloseError); !ok {
+				t.Errorf("Expected *ws.CloseError got: %s (%s)", reflect.TypeOf(err), err)
+			}
 		}))
 		defer s.Close()
 
