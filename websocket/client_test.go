@@ -334,6 +334,14 @@ func TestClient_WSCloseHandshake(t *testing.T) {
 		s := newWSServer(wsHandlerFunc(t, func(c *ws.Conn) {
 			defer close(ch)
 
+			// NOTE: In gorilla/websockets version 1.5.1, the default close handler now returns
+			// the error from their attempt to write a close message.
+			// However this will return `ErrCloseSent` if a close message has already been sent.
+			// To address this issue in the test, a quick fix is to define a null handler.
+			c.SetCloseHandler(func(code int, text string) error {
+				return nil
+			})
+
 			// Server sents a close message.
 			frame := ws.FormatCloseMessage(ws.CloseGoingAway, "woops")
 			_ = c.WriteMessage(ws.CloseMessage, frame)
