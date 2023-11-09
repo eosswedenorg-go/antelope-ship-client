@@ -60,6 +60,22 @@ func (c *Client) IsOpen() bool {
 	return c.conn != nil
 }
 
+// In Gorilla WebSockets version 1.5.1, they introduced a change where the error
+// code from the `WriteControl` function call is returned in their
+// default close handler.
+// This is generally acceptable; however, when the connection initiates a close
+// handshake, all writes to the connection result in an `ErrCloseSent` error.
+// This means that instead of receiving a `CloseError` with the actual code and
+// message from the other end, their close handler returns `ErrCloseSent`.
+
+// So a quick fix here is to define our own handler and just ignore ErrCloseSent.
+func (c *Client) closeHandler(code int, text string) error {
+	if err := c.WriteClose(1000, ""); err != nil && err != ws.ErrCloseSent {
+		return err
+	}
+	return nil
+}
+
 // Connect connects to a ship node
 //
 // Url must be of the form schema://host[:port]
@@ -71,6 +87,7 @@ func (c *Client) Connect(ctx context.Context, url string) error {
 	conn, _, err := ws.DefaultDialer.DialContext(ctx, url, nil)
 	if err == nil {
 		c.conn = conn
+		c.conn.SetCloseHandler(c.closeHandler)
 		c.close = make(chan interface{})
 
 		err = c.readAbi()
