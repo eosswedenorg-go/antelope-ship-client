@@ -23,6 +23,9 @@ type Client struct {
 	// Websocket connection
 	conn *ws.Conn
 
+	// Dialer
+	dialer ws.Dialer
+
 	// Channel to be used to signal that the websocket was closed correctly.
 	close chan interface{}
 
@@ -42,7 +45,9 @@ type Option func(*Client)
 
 // Create a new client
 func NewClient(options ...Option) *Client {
-	c := &Client{}
+	c := &Client{
+		dialer: *ws.DefaultDialer,
+	}
 	for _, opt := range options {
 		opt(c)
 	}
@@ -52,6 +57,12 @@ func NewClient(options ...Option) *Client {
 func WithFetchABI(value bool) Option {
 	return func(c *Client) {
 		c.FetchABI = value
+	}
+}
+
+func WithReadBufferSize(value int) Option {
+	return func(c *Client) {
+		c.dialer.ReadBufferSize = value
 	}
 }
 
@@ -84,7 +95,7 @@ func (c *Client) closeHandler(code int, text string) error {
 // The provided Context must be non-nil.
 // If the context expires or is canceled before the connection is complete, an error is returned.
 func (c *Client) Connect(ctx context.Context, url string) error {
-	conn, _, err := ws.DefaultDialer.DialContext(ctx, url, nil)
+	conn, _, err := c.dialer.DialContext(ctx, url, nil)
 	if err == nil {
 		c.conn = conn
 		c.conn.SetCloseHandler(c.closeHandler)
