@@ -188,7 +188,10 @@ func (c *Client) WriteClose(code int, reason string) error {
 }
 
 // Shutdown closes the connection gracefully by sending a Close handshake.
-// This function will block until a close message is received from the server an error occure or timeout is exceeded.
+// This function will block until a close message is received from the server an error occure or context is canceled.
+//
+// Note: Shutdown will not read anything from the stream. it assumes there is some other thread that reads and
+// process the close message returned from the server
 func (c *Client) Shutdown(ctx context.Context) error {
 	if !c.IsOpen() {
 		return ErrNotConnected
@@ -197,16 +200,6 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	if err := c.WriteClose(ws.CloseNormalClosure, ""); err != nil {
 		return err
 	}
-
-	// Spawn a go routine that will read until error (close message received)
-	go func() {
-		for {
-			_, err := c.Read()
-			if err != nil {
-				return
-			}
-		}
-	}()
 
 	// Wait for connection to fully close.
 	select {

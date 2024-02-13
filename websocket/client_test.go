@@ -428,6 +428,9 @@ func TestClient_Shutdown(t *testing.T) {
 	err := client.Connect(context.Background(), s.URL)
 	assert.NilError(t, err)
 
+	// Call read as a go routine to process the close essage
+	go client.Read()
+
 	err = client.Shutdown(ctx)
 	assert.NilError(t, err)
 
