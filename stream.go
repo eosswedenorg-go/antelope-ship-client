@@ -33,6 +33,7 @@ package antelope_ship_client
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"time"
 
 	eos "github.com/eoscanada/eos-go"
@@ -72,6 +73,8 @@ type Stream struct {
 
 	// if only irreversible blocks should be sent.
 	IrreversibleOnly bool
+
+	inShutdown atomic.Bool
 
 	// Callback functions
 	InitHandler       InitFn
@@ -277,7 +280,11 @@ func (s *Stream) Run() error {
 			if ws.IsCloseError(err, ws.CloseNormalClosure) && endblockreached {
 				err = ErrEndBlockReached
 			}
-			_ = s.Shutdown()
+
+			if s.inShutdown.Load() == false {
+				_ = s.Shutdown()
+			}
+
 			return err
 		}
 
@@ -318,5 +325,7 @@ func (s *Stream) Shutdown() error {
 		defer s.CloseHandler()
 	}
 
+	s.inShutdown.Store(true)
+	defer s.inShutdown.Store(false)
 	return s.client.Shutdown(ctx)
 }
