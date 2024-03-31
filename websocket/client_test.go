@@ -72,7 +72,7 @@ func TestClient_ConnectTimeout(t *testing.T) {
 
 	client := NewClient()
 	err := client.Connect(ctx, "ws://99.99.99.99:9999")
-	assert.ErrorType(t, err, &net.OpError{})
+	assert.ErrorIs(t, err, &net.OpError{})
 	assert.Equal(t, err.(*net.OpError).Timeout(), true)
 }
 
