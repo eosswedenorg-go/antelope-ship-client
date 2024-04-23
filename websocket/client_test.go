@@ -3,7 +3,6 @@ package websocket
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -72,8 +71,7 @@ func TestClient_ConnectTimeout(t *testing.T) {
 
 	client := NewClient()
 	err := client.Connect(ctx, "ws://99.99.99.99:9999")
-	assert.ErrorIs(t, err, &net.OpError{})
-	assert.Equal(t, err.(*net.OpError).Timeout(), true)
+	assert.Error(t, err, "dial tcp 99.99.99.99:9999: i/o timeout")
 }
 
 func TestClient_ConnectContextCancel(t *testing.T) {
