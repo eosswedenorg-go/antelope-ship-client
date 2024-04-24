@@ -3,11 +3,13 @@ package websocket
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"sync"
 
-	eos "github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/ship"
+	"github.com/pnx/antelope-go/chain"
+	"github.com/pnx/antelope-go/ship"
+
 	ws "github.com/gorilla/websocket"
 )
 
@@ -38,7 +40,7 @@ type Client struct {
 	FetchABI bool
 
 	// Pointer to the ABI
-	ABI *eos.ABI
+	ABI *chain.Abi
 }
 
 type Option func(*Client)
@@ -119,11 +121,11 @@ func (c *Client) readAbi() error {
 
 	// Decode and store abi if user cares about it.
 	if c.FetchABI {
-		abi, err := eos.NewABI(bytes.NewReader(data))
-		if err != nil {
+		abi := chain.Abi{}
+		if err := json.Unmarshal(data, &abi); err != nil {
 			return ErrDecodeABI
 		}
-		c.ABI = abi
+		c.ABI = &abi
 	}
 
 	return nil
@@ -158,11 +160,7 @@ func (c *Client) Read() (ship.Result, error) {
 	}
 
 	// Unpack the message
-	if err = eos.UnmarshalBinary(data, &r); err != nil {
-		return r, err
-	}
-
-	return r, err
+	return r, chain.NewDecoder(bytes.NewBuffer(data)).Decode(&r)
 }
 
 // Write a request to the ship server.
@@ -171,14 +169,15 @@ func (c *Client) Write(req ship.Request) error {
 		return ErrNotConnected
 	}
 
+	buf := bytes.NewBuffer(nil)
+
 	// Encode the request.
-	bytes, err := eos.MarshalBinary(req)
-	if err != nil {
+	if err := chain.NewEncoder(buf).Encode(req); err != nil {
 		return err
 	}
 
 	// Send the request.
-	return c.conn.WriteMessage(ws.BinaryMessage, bytes)
+	return c.conn.WriteMessage(ws.BinaryMessage, buf.Bytes())
 }
 
 // Write a websocket close message to the server.

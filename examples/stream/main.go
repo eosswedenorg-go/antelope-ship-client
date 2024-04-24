@@ -6,9 +6,10 @@ import (
 	"os"
 	"os/signal"
 
-	eos "github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/ship"
+	"github.com/eoscanada/eos-go"
 	shipclient "github.com/eosswedenorg-go/antelope-ship-client"
+	"github.com/pnx/antelope-go/chain"
+	"github.com/pnx/antelope-go/ship"
 )
 
 // -----------------------------
@@ -37,7 +38,7 @@ var printTraces bool = false
 // True if table deltas should be printed (this can get spammy)
 var printTableDeltas bool = false
 
-func initHandler(abi *eos.ABI) {
+func initHandler(abi *chain.Abi) {
 	log.Println("Server abi:", abi.Version)
 }
 
@@ -46,15 +47,28 @@ func processBlock(block *ship.GetBlocksResultV0) {
 		block.ThisBlock.BlockNum, block.ThisBlock.BlockID)
 }
 
-func processTableDeltas(deltas []*ship.TableDeltaV0) {
+func processTableDeltas(deltas_arr *ship.TableDeltaArray) {
+	deltas := []ship.TableDelta{}
+
+	if err := deltas_arr.Unpack(&deltas); err != nil {
+		log.Println("Failed to unpack table deltas:", err)
+		return
+	}
 	for _, delta := range deltas {
-		log.Println("Table Delta:", delta.Name, "rows:", len(delta.Rows))
+		log.Println("Table Delta:", delta.V0.Name, "rows:", len(delta.V0.Rows))
 	}
 }
 
-func processTraces(traces []*ship.TransactionTraceV0) {
+func processTraces(traces_arr *ship.TransactionTraceArray) {
+	traces := []ship.TransactionTrace{}
+
+	if err := traces_arr.Unpack(&traces); err != nil {
+		log.Println("Failed to unpack traces:", err)
+		return
+	}
+
 	for _, trace := range traces {
-		log.Println("Trace ID:", trace.ID)
+		log.Println("Trace ID:", trace.V0.ID)
 	}
 }
 

@@ -36,10 +36,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	eos "github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/ship"
 	"github.com/eosswedenorg-go/antelope-ship-client/websocket"
 	ws "github.com/gorilla/websocket"
+	"github.com/pnx/antelope-go/chain"
+	"github.com/pnx/antelope-go/ship"
 )
 
 var ErrEndBlockReached = errors.New("ship: end block reached")
@@ -47,10 +47,10 @@ var ErrEndBlockReached = errors.New("ship: end block reached")
 const NULL_BLOCK_NUMBER uint32 = 0xffffffff
 
 type (
-	InitFn       func(*eos.ABI)
+	InitFn       func(*chain.Abi)
 	BlockFn      func(*ship.GetBlocksResultV0)
-	TraceFn      func([]*ship.TransactionTraceV0)
-	TableDeltaFn func([]*ship.TableDeltaV0)
+	TraceFn      func(*ship.TransactionTraceArray)
+	TableDeltaFn func(*ship.TableDeltaArray)
 	StatusFn     func(*ship.GetStatusResultV0)
 	CloseFn      func()
 )
@@ -153,7 +153,7 @@ func WithTraceHandler(value TraceFn) Option {
 // Option to include traces without using a specific trace handler
 func WithTraces() Option {
 	return func(s *Stream) {
-		s.TraceHandler = func([]*ship.TransactionTraceV0) {}
+		s.TraceHandler = func(*ship.TransactionTraceArray) {}
 	}
 }
 
@@ -227,7 +227,7 @@ func (s *Stream) blockRequest() *ship.GetBlocksRequestV0 {
 		FetchBlock:          s.BlockHandler != nil,
 		FetchTraces:         s.TraceHandler != nil,
 		FetchDeltas:         s.TableDeltaHandler != nil,
-		HavePositions:       []*ship.BlockPosition{},
+		HavePositions:       nil,
 	}
 }
 
@@ -235,10 +235,7 @@ func (s *Stream) blockRequest() *ship.GetBlocksRequestV0 {
 // This tells the server to start sending block message to the client.
 func (s *Stream) SendBlocksRequest() error {
 	return s.client.Write(ship.Request{
-		BaseVariant: eos.BaseVariant{
-			TypeID: ship.RequestVariant.TypeID("get_blocks_request_v0"),
-			Impl:   s.blockRequest(),
-		},
+		BlocksRequest: s.blockRequest(),
 	})
 }
 
@@ -246,10 +243,7 @@ func (s *Stream) SendBlocksRequest() error {
 // This tells the server to start sending status message to the client.
 func (s *Stream) SendStatusRequest() error {
 	return s.client.Write(ship.Request{
-		BaseVariant: eos.BaseVariant{
-			TypeID: ship.RequestVariant.TypeID("get_status_request_v0"),
-			Impl:   &ship.GetStatusRequestV0{},
-		},
+		StatusRequest: &ship.GetStatusRequestV0{},
 	})
 }
 
@@ -258,12 +252,12 @@ func (s *Stream) routeBlock(block *ship.GetBlocksResultV0) {
 		s.BlockHandler(block)
 	}
 
-	if block.Traces != nil && len(block.Traces.Elem) > 0 && s.TraceHandler != nil {
-		s.TraceHandler(block.Traces.AsTransactionTracesV0())
+	if block.Traces != nil && s.TraceHandler != nil {
+		s.TraceHandler(block.Traces)
 	}
 
-	if block.Deltas != nil && len(block.Deltas.Elem) > 0 && s.TableDeltaHandler != nil {
-		s.TableDeltaHandler(block.Deltas.AsTableDeltasV0())
+	if block.Deltas != nil && s.TableDeltaHandler != nil {
+		s.TableDeltaHandler(block.Deltas)
 	}
 }
 
@@ -289,9 +283,10 @@ func (s *Stream) Run() error {
 		}
 
 		// Parse message and route to correct callback.
-		if block, ok := result.Impl.(*ship.GetBlocksResultV0); ok {
+		if result.BlocksResult != nil {
+			block := result.BlocksResult
 
-			if block.ThisBlock == nil && block.Head != nil {
+			if block.ThisBlock == nil {
 				continue
 			}
 
@@ -307,10 +302,8 @@ func (s *Stream) Run() error {
 			}
 		}
 
-		if s.StatusHandler != nil {
-			if status, ok := result.Impl.(*ship.GetStatusResultV0); ok {
-				s.StatusHandler(status)
-			}
+		if s.StatusHandler != nil && result.StatusResult != nil {
+			s.StatusHandler(result.StatusResult)
 		}
 	}
 }

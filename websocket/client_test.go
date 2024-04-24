@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/ship"
 	ws "github.com/gorilla/websocket"
+	"github.com/pnx/antelope-go/chain"
+	"github.com/pnx/antelope-go/ship"
 
 	"gotest.tools/v3/assert"
 )
@@ -206,22 +206,19 @@ func TestClient_ReadFromAbnormalClosedSocket(t *testing.T) {
 
 func TestClient_Read(t *testing.T) {
 	expected := ship.Result{
-		BaseVariant: eos.BaseVariant{
-			TypeID: ship.RequestVariant.TypeID("get_status_request_v0"),
-			Impl: &ship.GetStatusResultV0{
-				Head: &ship.BlockPosition{
-					BlockNum: 5000,
-					BlockID:  eos.Checksum256{0x0b, 0x10, 0x07, 0xfb, 0x2b, 0x23, 0x3b, 0x6b, 0xa8, 0x5f, 0x4e, 0xbe, 0x64, 0xc4, 0x9e, 0x0f, 0x23, 0xf3, 0xcc, 0x94, 0xcf, 0x9a, 0x9f, 0xcc, 0xa7, 0xbb, 0x63, 0x7a, 0xc8, 0x52, 0x84, 0x07},
-				},
-				LastIrreversible: &ship.BlockPosition{
-					BlockNum: 6000,
-					BlockID:  eos.Checksum256{0x40, 0xa9, 0x62, 0x70, 0xc9, 0x8b, 0x64, 0x11, 0x7a, 0xbe, 0xc0, 0x0a, 0x41, 0x11, 0x78, 0x10, 0x7c, 0xcd, 0x91, 0x8c, 0x19, 0xfb, 0x76, 0x32, 0xb6, 0x8f, 0x9b, 0xb5, 0xeb, 0xdf, 0xa9, 0xe6},
-				},
-				TraceBeginBlock:      500,
-				TraceEndBlock:        600,
-				ChainStateBeginBlock: 400,
-				ChainStateEndBlock:   500,
+		StatusResult: &ship.GetStatusResultV0{
+			Head: &ship.BlockPosition{
+				BlockNum: 5000,
+				BlockID:  chain.Checksum256{0x0b, 0x10, 0x07, 0xfb, 0x2b, 0x23, 0x3b, 0x6b, 0xa8, 0x5f, 0x4e, 0xbe, 0x64, 0xc4, 0x9e, 0x0f, 0x23, 0xf3, 0xcc, 0x94, 0xcf, 0x9a, 0x9f, 0xcc, 0xa7, 0xbb, 0x63, 0x7a, 0xc8, 0x52, 0x84, 0x07},
 			},
+			LastIrreversible: &ship.BlockPosition{
+				BlockNum: 6000,
+				BlockID:  chain.Checksum256{0x40, 0xa9, 0x62, 0x70, 0xc9, 0x8b, 0x64, 0x11, 0x7a, 0xbe, 0xc0, 0x0a, 0x41, 0x11, 0x78, 0x10, 0x7c, 0xcd, 0x91, 0x8c, 0x19, 0xfb, 0x76, 0x32, 0xb6, 0x8f, 0x9b, 0xb5, 0xeb, 0xdf, 0xa9, 0xe6},
+			},
+			TraceBeginBlock:      500,
+			TraceEndBlock:        600,
+			ChainStateBeginBlock: 400,
+			ChainStateEndBlock:   500,
 		},
 	}
 
@@ -260,18 +257,15 @@ func TestClient_Write(t *testing.T) {
 	ch := make(chan interface{})
 
 	req := ship.Request{
-		BaseVariant: eos.BaseVariant{
-			TypeID: ship.RequestVariant.TypeID("get_blocks_request_v0"),
-			Impl: &ship.GetBlocksRequestV0{
-				StartBlockNum:       1000,
-				EndBlockNum:         2000,
-				MaxMessagesInFlight: 20,
-				HavePositions:       []*ship.BlockPosition{},
-				IrreversibleOnly:    false,
-				FetchBlock:          false,
-				FetchTraces:         false,
-				FetchDeltas:         false,
-			},
+		BlocksRequest: &ship.GetBlocksRequestV0{
+			StartBlockNum:       1000,
+			EndBlockNum:         2000,
+			MaxMessagesInFlight: 20,
+			HavePositions:       []*ship.BlockPosition{},
+			IrreversibleOnly:    false,
+			FetchBlock:          false,
+			FetchTraces:         false,
+			FetchDeltas:         false,
 		},
 	}
 

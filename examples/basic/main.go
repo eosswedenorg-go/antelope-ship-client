@@ -8,8 +8,8 @@ import (
 	"time"
 
 	eos "github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/ship"
 	"github.com/eosswedenorg-go/antelope-ship-client/websocket"
+	"github.com/pnx/antelope-go/ship"
 )
 
 // -----------------------------
@@ -59,21 +59,17 @@ func main() {
 
 	// Request streaming of blocks from ship
 	err = client.Write(ship.Request{
-		BaseVariant: eos.BaseVariant{
-			TypeID: ship.RequestVariant.TypeID("get_blocks_request_v0"),
-			Impl: ship.GetBlocksRequestV0{
-				StartBlockNum:       startBlock,
-				EndBlockNum:         0xffffffff,
-				MaxMessagesInFlight: 0xffffffff,
-				IrreversibleOnly:    false,
-				FetchBlock:          true,
-				FetchTraces:         false,
-				FetchDeltas:         false,
-				HavePositions:       []*ship.BlockPosition{},
-			},
+		BlocksRequest: &ship.GetBlocksRequestV0{
+			StartBlockNum:       startBlock,
+			EndBlockNum:         0xffffffff,
+			MaxMessagesInFlight: 0xffffffff,
+			IrreversibleOnly:    false,
+			FetchBlock:          true,
+			FetchTraces:         false,
+			FetchDeltas:         false,
+			HavePositions:       []*ship.BlockPosition{},
 		},
 	})
-
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -87,9 +83,11 @@ func main() {
 				break
 			}
 
-			if block, ok := msg.Impl.(*ship.GetBlocksResultV0); ok {
+			if msg.BlocksResult != nil {
+				block := msg.BlocksResult
 				log.Printf("Current: %d, Head: %d\n", block.ThisBlock.BlockNum, block.Head.BlockNum)
-			} else if status, ok := msg.Impl.(*ship.GetStatusResultV0); ok {
+			} else if msg.StatusResult != nil {
+				status := msg.StatusResult
 				log.Printf("Status, Chain block: %d, Trace block: %d\n", status.ChainStateBeginBlock, status.TraceBeginBlock)
 			}
 		}
