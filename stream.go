@@ -38,8 +38,8 @@ import (
 
 	"github.com/eosswedenorg-go/antelope-ship-client/websocket"
 	ws "github.com/gorilla/websocket"
-	"github.com/pnx/antelope-go/chain"
-	"github.com/pnx/antelope-go/ship"
+	"github.com/shufflingpixels/antelope-go/chain"
+	"github.com/shufflingpixels/antelope-go/ship"
 )
 
 var ErrEndBlockReached = errors.New("ship: end block reached")

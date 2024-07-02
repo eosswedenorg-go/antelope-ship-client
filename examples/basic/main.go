@@ -9,7 +9,7 @@ import (
 
 	eos "github.com/eoscanada/eos-go"
 	"github.com/eosswedenorg-go/antelope-ship-client/websocket"
-	"github.com/pnx/antelope-go/ship"
+	"github.com/shufflingpixels/antelope-go/ship"
 )
 
 // -----------------------------

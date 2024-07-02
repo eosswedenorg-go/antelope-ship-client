@@ -8,8 +8,8 @@ import (
 
 	"github.com/eoscanada/eos-go"
 	shipclient "github.com/eosswedenorg-go/antelope-ship-client"
-	"github.com/pnx/antelope-go/chain"
-	"github.com/pnx/antelope-go/ship"
+	"github.com/shufflingpixels/antelope-go/chain"
+	"github.com/shufflingpixels/antelope-go/ship"
 )
 
 // -----------------------------

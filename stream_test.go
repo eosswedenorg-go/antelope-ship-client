@@ -13,8 +13,8 @@ import (
 	"time"
 
 	ws "github.com/gorilla/websocket"
-	"github.com/pnx/antelope-go/chain"
-	"github.com/pnx/antelope-go/ship"
+	"github.com/shufflingpixels/antelope-go/chain"
+	"github.com/shufflingpixels/antelope-go/ship"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
