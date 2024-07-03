@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/google/go-cmp v0.6.0
 	github.com/gorilla/websocket v1.5.1
-	github.com/shufflingpixels/antelope-go v0.1.0
+	github.com/shufflingpixels/antelope-go v0.1.2
 	gotest.tools/v3 v3.5.1
 )
 
