@@ -133,7 +133,7 @@ func (c *Client) readAbi() error {
 
 // Read a result message from the websocket.
 //
-// This function will block until atleast one message is read or an error occurred.
+// This function will block until at least one message is read or an error occurred.
 func (c *Client) Read() (ship.Result, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -187,9 +187,10 @@ func (c *Client) WriteClose(code int, reason string) error {
 }
 
 // Shutdown closes the connection gracefully by sending a Close handshake.
-// This function will block until a close message is received from the server an error occure or context is canceled.
+// This function will block until a close message is received from the server an error occur or context is canceled.
 //
-// Note: Shutdown will not read anything from the stream. it assumes there is some other thread that reads and
+// Note: Shutdown will not read anything from the stream.
+// It assumes there is some other thread that reads and
 // process the close message returned from the server
 func (c *Client) Shutdown(ctx context.Context) error {
 	if !c.IsOpen() {

@@ -164,6 +164,7 @@ func WithBlockHandler(value BlockFn) Option {
 	}
 }
 
+// Option to set Stream.TableDeltaHandler
 func WithTableDeltaHandler(value TableDeltaFn) Option {
 	return func(s *Stream) {
 		s.TableDeltaHandler = value
@@ -309,7 +310,7 @@ func (s *Stream) Run() error {
 }
 
 // Shutdown closes the stream gracefully by performing a websocket close handshake.
-// This function will block until a close message is received from the server an error occure or timeout is exceeded.
+// This function will block until a close message is received from the server, an error occur or timeout is exceeded.
 func (s *Stream) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.ShutdownTimeout)
 	defer cancel()
