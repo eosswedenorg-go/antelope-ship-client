@@ -34,8 +34,6 @@ type Client struct {
 	// Mutex to only allow one thread to close the connection (and close channel)
 	close_mu sync.Mutex
 
-	mu sync.Mutex
-
 	// True if we care about the abi.
 	FetchABI bool
 
@@ -135,9 +133,6 @@ func (c *Client) readAbi() error {
 //
 // This function will block until at least one message is read or an error occurred.
 func (c *Client) Read() (ship.Result, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	r := ship.Result{}
 
 	if !c.IsOpen() {
