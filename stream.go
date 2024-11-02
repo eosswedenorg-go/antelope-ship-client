@@ -276,7 +276,7 @@ func (s *Stream) Run() error {
 				err = ErrEndBlockReached
 			}
 
-			if s.inShutdown.Load() == false {
+			if err != websocket.ErrNotConnected && s.inShutdown.Load() == false {
 				_ = s.Shutdown()
 			}
 
