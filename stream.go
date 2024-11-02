@@ -74,6 +74,12 @@ type Stream struct {
 	// if only irreversible blocks should be sent.
 	IrreversibleOnly bool
 
+	// Max messages that can be sent from the server without being acked.
+	MaxMessagesInFlight uint32
+
+	// current number of messages received.
+	msgRecv uint32
+
 	inShutdown atomic.Bool
 
 	// Callback functions
@@ -90,9 +96,10 @@ type Option func(*Stream)
 // Create a new stream
 func NewStream(options ...Option) *Stream {
 	s := &Stream{
-		ConnectTimeout:  time.Second * 30,
-		ShutdownTimeout: time.Second * 4,
-		EndBlock:        NULL_BLOCK_NUMBER,
+		ConnectTimeout:      time.Second * 30,
+		ShutdownTimeout:     time.Second * 4,
+		EndBlock:            NULL_BLOCK_NUMBER,
+		MaxMessagesInFlight: 0xffffffff,
 	}
 
 	for _, opt := range options {
@@ -133,6 +140,13 @@ func WithEndBlock(value uint32) Option {
 func WithIrreversibleOnly(value bool) Option {
 	return func(s *Stream) {
 		s.IrreversibleOnly = value
+	}
+}
+
+// Option to set Stream.MaxMessagesInFlight
+func WithMaxMessagesInFlight(value uint32) Option {
+	return func(s *Stream) {
+		s.MaxMessagesInFlight = value
 	}
 }
 
@@ -223,7 +237,7 @@ func (s *Stream) blockRequest() *ship.GetBlocksRequestV0 {
 	return &ship.GetBlocksRequestV0{
 		StartBlockNum:       s.StartBlock,
 		EndBlockNum:         s.EndBlock,
-		MaxMessagesInFlight: 0xffffffff,
+		MaxMessagesInFlight: s.MaxMessagesInFlight,
 		IrreversibleOnly:    s.IrreversibleOnly,
 		FetchBlock:          s.BlockHandler != nil,
 		FetchTraces:         s.TraceHandler != nil,
@@ -306,6 +320,20 @@ func (s *Stream) Run() error {
 		if s.StatusHandler != nil && result.StatusResult != nil {
 			s.StatusHandler(result.StatusResult)
 		}
+
+		s.handleAck()
+	}
+}
+
+func (s *Stream) handleAck() {
+	s.msgRecv++
+	if s.msgRecv >= s.MaxMessagesInFlight {
+		s.client.Write(ship.Request{
+			BlocksAckRequest: &ship.GetBlocksAckRequestV0{
+				NumMessages: s.msgRecv,
+			},
+		})
+		s.msgRecv = 0
 	}
 }
 
